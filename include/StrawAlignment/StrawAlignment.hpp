@@ -57,15 +57,7 @@ constexpr auto sign(T value) -> T
 template<typename T>
 constexpr auto make_rotation_matrix(T phi, T theta, T psi) -> Rotation3D
 {
-    return Rotation3D(helper::R11(phi, theta, psi),
-                      helper::R12(phi, theta, psi),
-                      helper::R13(phi, theta, psi),
-                      helper::R21(phi, theta, psi),
-                      helper::R22(phi, theta, psi),
-                      helper::R23(phi, theta, psi),
-                      helper::R31(phi, theta, psi),
-                      helper::R32(phi, theta, psi),
-                      helper::R33(phi, theta, psi));
+    return Rotation3D(helper::R11(phi, theta, psi), helper::R12(phi, theta, psi), helper::R13(phi, theta, psi), helper::R21(phi, theta, psi), helper::R22(phi, theta, psi), helper::R23(phi, theta, psi), helper::R31(phi, theta, psi), helper::R32(phi, theta, psi), helper::R33(phi, theta, psi));
 }
 
 inline auto rotate(XYZVector v, Rotation3D R) -> XYZVector
@@ -90,39 +82,8 @@ inline auto distance(XYZPoint base1, XYZVector dir1, XYZPoint base2, XYZVector d
     return std::abs((base1 - base2).Dot(dir1.Cross(dir2)) / dir1.Cross(dir2).R());
 }
 
-namespace derivatives::local
-{
-constexpr auto dr_dx0() -> double
-{
-    return 0.0;
-}
-
-constexpr auto dr_dy0() -> double
-{
-    return 0.0;
-}
-
-constexpr auto dr_dz0() -> double
-{
-    return 0.0;
-}
-
-constexpr auto dr_dtx() -> double
-{
-    return 0.0;
-}
-
-constexpr auto dr_dty() -> double
-{
-    return 0.0;
-}
-}  // namespace derivatives::local
-
-namespace derivatives
-{
-
 template<typename T>
-struct global
+struct derivatives
 {
     T cos_psi;
     T sin_psi;
@@ -251,7 +212,7 @@ struct global
     T tx;
     T ty;
 
-    global(T psi, T theta, T phi, T U, T V, T Z, T Xa, T Ya, T Za, T bx, T by, T bz, T tx, T ty)
+    derivatives(T psi, T theta, T phi, T U, T V, T Z, T Xa, T Ya, T Za, T bx, T by, T bz, T tx, T ty)
         : U(U)
         , V(V)
         , Z(Z)
@@ -380,264 +341,28 @@ struct global
         // sin_psi_sin_phi_cos_phi = sin_psi * sin_phi * cos_phi;
     }
 
-    constexpr auto dr_dXa() -> T
-    {
-        return (((-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                     * (-(cos_psi_sin_phi)-sin_psi_sin_theta_cos_phi)
-                 - cos_theta_cos_phi
-                     * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                 + (-(sin_psi_sin_phi) + cos_psi_sin_theta_cos_phi)
-                     * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi))
-                * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                       * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                   + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                       * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                          + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                   + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                       * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                          + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))))
-            / (sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2)
-                    + pow(-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2)
-                    + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2))
-               * abs((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                         * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                     + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                         * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                     + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                         * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))));
-    }
+    constexpr auto dr_dpsi() -> T { return -1 / 2 * ((2 * (-(tx * sin_psi_cos_phi) - tx * cos_psi_sin_theta_sin_phi) * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) + 2 * (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (-(tx * cos_psi_cos_phi) + tx * sin_psi_sin_theta_sin_phi) + 2 * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) * (ty * cos_psi_cos_phi + sin_psi_cos_phi + cos_psi_sin_theta_sin_phi - ty * sin_psi_sin_theta_sin_phi)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)) / pow(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0), 3.0/2.0) + (((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (ty * cos_psi_cos_phi + sin_psi_cos_phi + cos_psi_sin_theta_sin_phi - ty * sin_psi_sin_theta_sin_phi) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * ((Z + Za) * cos_psi_cos_theta + (-U - Xa) * (-(sin_psi_sin_phi) + cos_psi_sin_theta_cos_phi) + (-V - Ya) * (-(sin_psi_cos_phi)-cos_psi_sin_theta_sin_phi)) + (-(tx * sin_psi_cos_phi) - tx * cos_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (-((-Z - Za) * sin_psi_cos_theta) + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)) + (-(tx * cos_psi_cos_phi) + tx * sin_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)))) / (Sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)); }
 
-    constexpr auto dr_dYa() -> T
-    {
-        return (((-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                     * (-(cos_psi_cos_phi) + sin_psi_sin_theta_sin_phi)
-                 + cos_theta_sin_phi
-                     * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                 + (-(sin_psi_cos_phi)-cos_psi_sin_theta_sin_phi)
-                     * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi))
-                * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                       * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                   + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                       * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                          + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                   + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                       * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                          + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))))
-            / (sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2)
-                    + pow(-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2)
-                    + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2))
-               * abs((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                         * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                     + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                         * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                     + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                         * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))));
-    }
+    constexpr auto dr_dtheta() -> T { return (((ty * cos_psi_cos_theta_sin_phi + sin_psi_cos_theta_sin_phi) * (bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * ((-U - Xa) * sin_psi_cos_theta_cos_phi - (-V - Ya) * sin_psi_cos_theta_sin_phi - (Z + Za) * sin_psi_sin_theta) + ((-Z - Za) * cos_theta - (-U - Xa) * sin_theta_cos_phi - (V + Ya) * sin_theta_sin_phi) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (-((-U - Xa) * cos_psi_cos_theta_cos_phi) + (-V - Ya) * cos_psi_cos_theta_sin_phi - (-Z - Za) * cos_psi_sin_theta) * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) + (-(tx * sin_psi_cos_theta_sin_phi) - ty * sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(tx * cos_psi_cos_theta_sin_phi) + sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)))) / (Sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)) - ((2 * (-(tx * cos_psi_cos_theta_sin_phi) + sin_theta_sin_phi) * (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) + 2 * (ty * cos_psi_cos_theta_sin_phi + sin_psi_cos_theta_sin_phi) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + 2 * (-(tx * sin_psi_cos_theta_sin_phi) - ty * sin_theta_sin_phi) * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)) / (2 * pow(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0), 3.0/2.0)); }
 
-    constexpr auto dr_dZa() -> T
-    {
-        return ((sin_psi_cos_theta * (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                 - sin_theta * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                 - cos_psi_cos_theta * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi))
-                * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                       * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                   + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                       * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                          + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                   + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                       * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                          + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))))
-            / (sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2)
-                    + pow(-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2)
-                    + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2))
-               * abs((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                         * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                     + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                         * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                     + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                         * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))));
-    }
+    constexpr auto dr_dphi() -> T { return (((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (cos_psi_sin_phi - ty * sin_psi_sin_phi + ty * cos_psi_sin_theta_cos_phi + sin_psi_sin_theta_cos_phi) + ((V + Ya) * cos_theta_cos_phi - (-U - Xa) * cos_theta_sin_phi) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * ((-V - Ya) * (-(sin_psi_sin_phi) + cos_psi_sin_theta_cos_phi) + (-U - Xa) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (ty * cos_theta_cos_phi - tx * cos_psi_sin_phi - tx * sin_psi_sin_theta_cos_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * ((-V - Ya) * (-(cos_psi_sin_phi)-sin_psi_sin_theta_cos_phi) + (-U - Xa) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)) + (-(cos_theta_cos_phi) + tx * sin_psi_sin_phi - tx * cos_psi_sin_theta_cos_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)))) / (Sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)) - ((2 * (-(cos_theta_cos_phi) + tx * sin_psi_sin_phi - tx * cos_psi_sin_theta_cos_phi) * (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) + 2 * (cos_psi_sin_phi - ty * sin_psi_sin_phi + ty * cos_psi_sin_theta_cos_phi + sin_psi_sin_theta_cos_phi) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + 2 * (ty * cos_theta_cos_phi - tx * cos_psi_sin_phi - tx * sin_psi_sin_theta_cos_phi) * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)) / (2 * pow(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0), 3.0/2.0)); }
 
-    constexpr auto dr_dpsi() -> T
-    {
-        return -0.5
-            * ((2 * (-(tx * sin_psi_cos_phi) - tx * cos_psi_sin_theta_sin_phi)
-                    * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                + 2 * (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                    * (-(tx * cos_psi_cos_phi) + tx * sin_psi_sin_theta_sin_phi)
-                + 2 * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                    * (ty * cos_psi_cos_phi + sin_psi_cos_phi + cos_psi_sin_theta_sin_phi - ty * sin_psi_sin_theta_sin_phi))
-               * abs((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                         * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                     + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                         * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                     + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                         * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))))
-            / pow(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2)
-                      + pow(-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2)
-                      + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2),
-                  1.5)
-            + (((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                    * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                    * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                       + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                    * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                       + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)))
-               * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                      * (ty * cos_psi_cos_phi + sin_psi_cos_phi + cos_psi_sin_theta_sin_phi - ty * sin_psi_sin_theta_sin_phi)
-                  + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                      * ((Z + Za) * cos_psi_cos_theta + (-U - Xa) * (-(sin_psi_sin_phi) + cos_psi_sin_theta_cos_phi)
-                         + (-V - Ya) * (-(sin_psi_cos_phi)-cos_psi_sin_theta_sin_phi))
-                  + (-(tx * sin_psi_cos_phi) - tx * cos_psi_sin_theta_sin_phi)
-                      * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                         + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                  + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                      * (-((-Z - Za) * sin_psi_cos_theta) + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                         + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))
-                  + (-(tx * cos_psi_cos_phi) + tx * sin_psi_sin_theta_sin_phi)
-                      * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                         + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))))
-            / (sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2)
+    constexpr auto dr_dXa() -> T { return (((-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (-(cos_psi_sin_phi)-sin_psi_sin_theta_cos_phi) - cos_theta_cos_phi * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (-(sin_psi_sin_phi) + cos_psi_sin_theta_cos_phi) * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)) * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)))) / (Sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)); }
 
-                    + pow(-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2)
+    constexpr auto dr_dYa() -> T { return (((-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (-(cos_psi_cos_phi) + sin_psi_sin_theta_sin_phi) + cos_theta_sin_phi * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (-(sin_psi_cos_phi)-cos_psi_sin_theta_sin_phi) * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)) * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)))) / (Sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)); }
 
-                    + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2))
-               * abs((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                         * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                     + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                         * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                     + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                         * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))));
-    }
+    constexpr auto dr_dZa() -> T { return ((sin_psi_cos_theta * (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) - sin_theta * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) - cos_psi_cos_theta * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)) * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)))) / (Sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)); }
 
-    constexpr auto dr_dtheta() -> T
-    {
-        return (((ty * cos_psi_cos_theta_sin_phi + sin_psi_cos_theta_sin_phi)
-                     * (bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                 + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                     * ((-U - Xa) * sin_psi_cos_theta_cos_phi - (-V - Ya) * sin_psi_cos_theta_sin_phi - (Z + Za) * sin_psi_sin_theta)
-                 + ((-Z - Za) * cos_theta - (-U - Xa) * sin_theta_cos_phi - (V + Ya) * sin_theta_sin_phi)
-                     * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                 + (-((-U - Xa) * cos_psi_cos_theta_cos_phi) + (-V - Ya) * cos_psi_cos_theta_sin_phi - (-Z - Za) * cos_psi_sin_theta)
-                     * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                 + (-(tx * sin_psi_cos_theta_sin_phi) - ty * sin_theta_sin_phi)
-                     * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                        + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                 + (-(tx * cos_psi_cos_theta_sin_phi) + sin_theta_sin_phi)
-                     * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                        + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)))
-                * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                       * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                   + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                       * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                          + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                   + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                       * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                          + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))))
-            / (sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2)
+    constexpr auto dr_dbx() -> T { return ((-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)))) / (Sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)); }
 
-                    + pow(-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2)
-                    + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2))
-               * abs((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                         * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                     + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                         * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                     + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                         * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))))
-            - ((2 * (-(tx * cos_psi_cos_theta_sin_phi) + sin_theta_sin_phi)
-                    * (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                + 2 * (ty * cos_psi_cos_theta_sin_phi + sin_psi_cos_theta_sin_phi)
-                    * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                + 2 * (-(tx * sin_psi_cos_theta_sin_phi) - ty * sin_theta_sin_phi)
-                    * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi))
-               * abs((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                         * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                     + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                         * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                     + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                         * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))))
-            / (2
-               * pow(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2)
-                         + pow(-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2)
-                         + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2),
-                     1.5));
-    }
+    constexpr auto dr_dby() -> T { return ((-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)))) / (Sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)); }
 
-    constexpr auto dr_dphi() -> T
-    {
-        return (((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                     * (cos_psi_sin_phi - ty * sin_psi_sin_phi + ty * cos_psi_sin_theta_cos_phi + sin_psi_sin_theta_cos_phi)
-                 + ((V + Ya) * cos_theta_cos_phi - (-U - Xa) * cos_theta_sin_phi)
-                     * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                 + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                     * ((-V - Ya) * (-(sin_psi_sin_phi) + cos_psi_sin_theta_cos_phi)
-                        + (-U - Xa) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                 + (ty * cos_theta_cos_phi - tx * cos_psi_sin_phi - tx * sin_psi_sin_theta_cos_phi)
-                     * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                        + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                 + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                     * ((-V - Ya) * (-(cos_psi_sin_phi)-sin_psi_sin_theta_cos_phi)
-                        + (-U - Xa) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))
-                 + (-(cos_theta_cos_phi) + tx * sin_psi_sin_phi - tx * cos_psi_sin_theta_cos_phi)
-                     * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                        + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)))
-                * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                       * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                   + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                       * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                          + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                   + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                       * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                          + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))))
-            / (sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2)
-                    + pow(-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2)
-                    + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2))
-               * abs((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                         * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                     + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                         * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                     + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                         * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))))
-            - ((2 * (-(cos_theta_cos_phi) + tx * sin_psi_sin_phi - tx * cos_psi_sin_theta_cos_phi)
-                    * (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                + 2 * (cos_psi_sin_phi - ty * sin_psi_sin_phi + ty * cos_psi_sin_theta_cos_phi + sin_psi_sin_theta_cos_phi)
-                    * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                + 2 * (ty * cos_theta_cos_phi - tx * cos_psi_sin_phi - tx * sin_psi_sin_theta_cos_phi)
-                    * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi))
-               * abs((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta)
-                         * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi)
-                     + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)
-                         * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                     + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi)
-                         * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-                            + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))))
-            / (2
-               * pow(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2)
-                         + pow(-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2)
-                         + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2),
-                     1.5));
-    }
+    constexpr auto dr_dbz() -> T { return ((tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)))) / (Sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)); }
+
+    constexpr auto dr_dtx() -> T { return (((cos_psi_cos_phi - sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(sin_psi_cos_phi)-cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)))) / (Sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)) - ((2 * (-(sin_psi_cos_phi)-cos_psi_sin_theta_sin_phi) * (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) + 2 * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi) * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)) / (2 * pow(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0), 3.0/2.0)); }
+
+    constexpr auto dr_dty() -> T { return (((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi) + cos_theta_sin_phi * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))) * ((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)))) / (Sqrt(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)) - ((2 * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + 2 * cos_theta_sin_phi * (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi)) * Sqrt(((bx + (-U - Xa) * cos_theta_cos_phi + (V + Ya) * cos_theta_sin_phi + (-Z - Za) * sin_theta) * (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi) + (tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi) * (bz + (-Z - Za) * cos_psi_cos_theta + (-U - Xa) * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi) + (-V - Ya) * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi)) + (-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi) * (by + (Z + Za) * sin_psi_cos_theta + (-U - Xa) * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) + (-V - Ya) * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))) ^ 2)) / (2 * pow(pow(-(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi, 2.0) +pow (-(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi, 2.0) + pow(tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi, 2.0), 3.0/2.0)); }
 };
-}  // namespace derivatives
 
 template<typename T>
 struct global_parameters
@@ -664,12 +389,7 @@ class MilleBuilder
     }
     ~MilleBuilder() {};
 
-    auto add_planes_global(std::optional<float> X_a,
-                           std::optional<float> Y_a,
-                           std::optional<float> Z_a,
-                           std::optional<float> phi,
-                           std::optional<float> theta,
-                           std::optional<float> psi)
+    auto add_planes_global(std::optional<float> X_a, std::optional<float> Y_a, std::optional<float> Z_a, std::optional<float> phi, std::optional<float> theta, std::optional<float> psi)
     {
         global_parameters<float> gp = {X_a, Y_a, Z_a, phi, theta, psi};
         globals.push_back(std::move(gp));
@@ -692,56 +412,64 @@ class MilleBuilder
         const auto param_idx_offset = layer * 10;
         const auto& global_params = globals[layer];
 
+        auto derivs = derivatives<float>(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
         std::vector<float> global_derivatives(10);
         std::vector<int> global_deriv_index(10);
 
         int global_params_count = 0;
 
-        auto gdev = derivatives::global<float>(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
         if (!global_params.X_fine) {
             global_params_count++;
 
-            global_derivatives.push_back(gdev.dr_dXa());
+            global_derivatives.push_back(derivs.dr_dXa());
             global_deriv_index.push_back(param_idx_offset + 0);
         }
 
         if (!global_params.Y_fine) {
             global_params_count++;
 
-            global_derivatives.push_back(gdev.dr_dYa());
+            global_derivatives.push_back(derivs.dr_dYa());
             global_deriv_index.push_back(param_idx_offset + 1);
         }
 
         if (!global_params.Z_fine) {
             global_params_count++;
 
-            global_derivatives.push_back(gdev.dr_dZa());
+            global_derivatives.push_back(derivs.dr_dZa());
             global_deriv_index.push_back(param_idx_offset + 2);
         }
 
         if (!global_params.phi) {
             global_params_count++;
 
-            global_derivatives.push_back(gdev.dr_dphi());
+            global_derivatives.push_back(derivs.dr_dphi());
             global_deriv_index.push_back(param_idx_offset + 3);
         }
 
         if (!global_params.theta) {
             global_params_count++;
 
-            global_derivatives.push_back(gdev.dr_dtheta());
+            global_derivatives.push_back(derivs.dr_dtheta());
             global_deriv_index.push_back(param_idx_offset + 4);
         }
 
         if (!global_params.psi) {
             global_params_count++;
 
-            global_derivatives.push_back(gdev.dr_dpsi());
+            global_derivatives.push_back(derivs.dr_dpsi());
             global_deriv_index.push_back(param_idx_offset + 5);
         }
 
-        mille.mille(0, NULL, global_params_count, global_derivatives.data(), global_deriv_index.data(), 0, 0);
+        std::vector<float> local_derivatives(10);
+
+        local_derivatives.push_back(derivs.dr_dbx());
+        local_derivatives.push_back(derivs.dr_dby());
+        local_derivatives.push_back(derivs.dr_dbz());
+        local_derivatives.push_back(derivs.dr_dtx());
+        local_derivatives.push_back(derivs.dr_dty());
+
+        mille.mille(5, local_derivatives.data(), global_params_count, global_derivatives.data(), global_deriv_index.data(), 0, 0);
     }
 
     /* Call Mille::end()
