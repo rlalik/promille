@@ -1,5 +1,4 @@
 #include <StrawAlignment/StrawAlignment.hpp>
-#include <TVector3.h>
 #include <gtest/gtest.h>
 
 TEST(Operations, Components)

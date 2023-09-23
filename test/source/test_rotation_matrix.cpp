@@ -1,12 +1,11 @@
 #include <StrawAlignment/StrawAlignment.hpp>
-#include <TVector3.h>
 #include <gtest/gtest.h>
 
 TEST(RotationMatrix, Components)
 {
-    Float_t phi = 0.0;
-    Float_t theta = 0.0;
-    Float_t ypsilon = 0.0;
+    float phi = 0.0;
+    float theta = 0.0;
+    float ypsilon = 0.0;
 
     EXPECT_DOUBLE_EQ(SA::helper::R11(phi, theta, ypsilon), 1.0);
     EXPECT_DOUBLE_EQ(SA::helper::R12(phi, theta, ypsilon), 0.0);
@@ -23,9 +22,9 @@ TEST(RotationMatrix, Components)
 
 TEST(RotationMatrix, Matrix)
 {
-    Float_t phi = 0.0;
-    Float_t theta = 0.0;
-    Float_t ypsilon = 0.0;
+    float phi = 0.0;
+    float theta = 0.0;
+    float ypsilon = 0.0;
 
     auto R = SA::make_rotation_matrix(phi, theta, ypsilon);
 
@@ -35,9 +34,9 @@ TEST(RotationMatrix, Matrix)
 
 TEST(RotationMatrix, Rotating)
 {
-    Double_t phi = 0.0;
-    Double_t theta = 0.0;
-    Double_t ypsilon = 0.0;
+    double phi = 0.0;
+    double theta = 0.0;
+    double ypsilon = 0.0;
 
     auto R = SA::make_rotation_matrix(phi, theta, ypsilon);
 

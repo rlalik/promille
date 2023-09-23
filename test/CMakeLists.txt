@@ -25,9 +25,17 @@ endif()
 
 # ---- Tests ----
 
-add_executable(StrawAlignment_test source/test_rotation_matrix.cpp source/test_operations.cpp)
+add_executable(StrawAlignment_test
+  source/test_rotation_matrix.cpp
+  source/test_operations.cpp
+  source/test_mille.cpp
+  ../include/StrawAlignment/Mille.cc
+)
+
 target_link_libraries(StrawAlignment_test PRIVATE ${GTEST_TRG} StrawAlignment::StrawAlignment)
 target_compile_features(StrawAlignment_test PRIVATE cxx_std_17)
+
+target_compile_options(StrawAlignment_test PUBLIC -Wmaybe-uninitialized;-Wpedantic)
 
 add_test(NAME StrawAlignment_test COMMAND StrawAlignment_test)
 
