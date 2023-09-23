@@ -34,17 +34,17 @@ namespace SA
 namespace helper
 {
 // clang-format off
-template<typename T> constexpr auto R11(T phi, T theta, T psi) -> T { return cos(theta)*cos(phi); }
-template<typename T> constexpr auto R12(T phi, T theta, T psi) -> T { return cos(theta)*sin(phi); }
-template<typename T> constexpr auto R13(T phi, T theta, T psi) -> T { return -sin(theta); }
+template<typename T> constexpr auto R11(T psi, T theta, T phi) -> T { return cos(theta)*cos(psi); }
+template<typename T> constexpr auto R12(T psi, T theta, T phi) -> T { return cos(theta)*sin(psi); }
+template<typename T> constexpr auto R13(T psi, T theta, T phi) -> T { return -sin(theta); }
 
-template<typename T> constexpr auto R21(T phi, T theta, T psi) -> T { return sin(psi)*sin(theta)*cos(phi) - cos(psi)*sin(phi); }
-template<typename T> constexpr auto R22(T phi, T theta, T psi) -> T { return sin(psi)*sin(theta)*sin(phi) + cos(psi)*cos(phi); }
-template<typename T> constexpr auto R23(T phi, T theta, T psi) -> T { return sin(psi)*cos(theta); }
+template<typename T> constexpr auto R21(T psi, T theta, T phi) -> T { return sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi); }
+template<typename T> constexpr auto R22(T psi, T theta, T phi) -> T { return sin(phi)*sin(theta)*sin(psi) + cos(phi)*cos(psi); }
+template<typename T> constexpr auto R23(T psi, T theta, T phi) -> T { return sin(phi)*cos(theta); }
 
-template<typename T> constexpr auto R31(T phi, T theta, T psi) -> T { return cos(psi)*sin(theta)*cos(phi) + sin(psi)*sin(phi); }
-template<typename T> constexpr auto R32(T phi, T theta, T psi) -> T { return cos(psi)*sin(theta)*sin(phi) - sin(psi)*cos(phi); }
-template<typename T> constexpr auto R33(T phi, T theta, T psi) -> T { return cos(psi)*cos(theta); }
+template<typename T> constexpr auto R31(T psi, T theta, T phi) -> T { return cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi); }
+template<typename T> constexpr auto R32(T psi, T theta, T phi) -> T { return cos(phi)*sin(theta)*sin(psi) - sin(phi)*cos(psi); }
+template<typename T> constexpr auto R33(T psi, T theta, T phi) -> T { return cos(phi)*cos(theta); }
 // clang-format on
 
 template<typename T>
@@ -55,17 +55,17 @@ constexpr auto sign(T value) -> T
 }  // namespace helper
 
 template<typename T>
-constexpr auto make_rotation_matrix(T phi, T theta, T psi) -> Rotation3D
+constexpr auto make_rotation_matrix(T psi, T theta, T phi) -> Rotation3D
 {
-    return Rotation3D(helper::R11(phi, theta, psi),
-                      helper::R12(phi, theta, psi),
-                      helper::R13(phi, theta, psi),
-                      helper::R21(phi, theta, psi),
-                      helper::R22(phi, theta, psi),
-                      helper::R23(phi, theta, psi),
-                      helper::R31(phi, theta, psi),
-                      helper::R32(phi, theta, psi),
-                      helper::R33(phi, theta, psi));
+    return Rotation3D(helper::R11(psi, theta, phi),
+                      helper::R12(psi, theta, phi),
+                      helper::R13(psi, theta, phi),
+                      helper::R21(psi, theta, phi),
+                      helper::R22(psi, theta, phi),
+                      helper::R23(psi, theta, phi),
+                      helper::R31(psi, theta, phi),
+                      helper::R32(psi, theta, phi),
+                      helper::R33(psi, theta, phi));
 }
 
 inline auto rotate(XYZVector v, Rotation3D R) -> XYZVector
@@ -219,6 +219,10 @@ struct derivatives
     T bz;
     T tx;
     T ty;
+
+    T corr_U;
+    T corr_V;
+    T corr_Z;
 
     T common_0;
     T common_1;
@@ -494,20 +498,45 @@ struct derivatives
     }
 };
 
+enum class Kind
+{
+    FIXED,
+    FREE
+};
+
+template<typename T>
+struct parameter
+{
+    T value;
+    Kind kind;
+
+    operator bool() const { return kind == Kind::FREE; }
+    explicit operator T() const { return value; }
+};
+
 template<typename T>
 struct global_parameters
 {
-    // std::optional<T> X_coarse;
-    // std::optional<T> Y_coarse;
-    // std::optional<T> Z_coarse;
+    global_parameters(parameter<T> Xa, parameter<T> Ya, parameter<T> Za, parameter<T> psi, parameter<T> phi, parameter<T> theta)
+        : Xa(Xa)
+        , Ya(Ya)
+        , Za(Za)
+        , psi(psi)
+        , theta(theta)
+        , phi(phi)
+    {
+        wire_rotation = make_rotation_matrix<T>(psi, theta, phi) * make_vector<T>(0, 1, 0);
+    }
 
-    std::optional<T> X_fine;
-    std::optional<T> Y_fine;
-    std::optional<T> Z_fine;
+    parameter<T> Xa;
+    parameter<T> Ya;
+    parameter<T> Za;
 
-    std::optional<T> phi;
-    std::optional<T> theta;
-    std::optional<T> psi;
+    parameter<T> psi;
+    parameter<T> phi;
+    parameter<T> theta;
+
+    XYZVector wire_rotation;
 };
 
 class MilleBuilder
@@ -519,10 +548,11 @@ class MilleBuilder
     }
     ~MilleBuilder() {};
 
-    auto add_planes_global(std::optional<float> X_a, std::optional<float> Y_a, std::optional<float> Z_a, std::optional<float> phi, std::optional<float> theta, std::optional<float> psi)
+    auto add_planes_global(
+        parameter<float> Xa, parameter<float> Ya, parameter<float> Za, parameter<float> psi, parameter<float> theta, parameter<float> phi)
     {
-        global_parameters<float> gp = {X_a, Y_a, Z_a, phi, theta, psi};
-        globals.push_back(std::move(gp));
+        global_parameters<float> gp = {Xa, Ya, Za, psi, theta, phi};
+        layers_global_pars.push_back(std::move(gp));
     }
 
     /**
@@ -534,57 +564,76 @@ class MilleBuilder
      * @param z0 base vector z-coordinate
      * @param tx direction vector x-component
      * @param ty direction vector y-component
+     * @param wx wire position x
+     * @param wy wire position y
+     * @param wz wire position z
+     * @param rx wire rotation around x
+     * @param ry wire rotation around y
+     * @param rz wire rotation around z
      */
-    auto add_local(int layer, float x0, float y0, float z0, float tx, float ty)
+    auto add_local(int layer, float bx, float by, float bz, float tx, float ty, float U, float V, float Z, float dr, float sigma)
     {
-        assert(layer < globals.size());
+        assert(layer < layers_global_pars.size());
 
         const auto param_idx_offset = layer * 10;
-        const auto& global_params = globals[layer];
+        const auto& current_layer_pars = layers_global_pars[layer];
 
-        auto derivs = derivatives<float>(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        auto derivs = derivatives<float>(current_layer_pars.psi.value,
+                                         current_layer_pars.theta.value,
+                                         current_layer_pars.phi.value,
+                                         U,
+                                         V,
+                                         Z,
+                                         current_layer_pars.Xa.value,
+                                         current_layer_pars.Ya.value,
+                                         current_layer_pars.Za.value,
+                                         bx,
+                                         by,
+                                         bz,
+                                         tx,
+                                         ty);
 
         std::vector<float> global_derivatives(10);
         std::vector<int> global_deriv_index(10);
 
         int global_params_count = 0;
 
-        if (!global_params.X_fine) {
+        if (!current_layer_pars.Xa) {
             global_params_count++;
 
             global_derivatives.push_back(derivs.dr_dXa());
             global_deriv_index.push_back(param_idx_offset + 0);
         }
 
-        if (!global_params.Y_fine) {
+        if (!current_layer_pars.Ya) {
             global_params_count++;
 
             global_derivatives.push_back(derivs.dr_dYa());
             global_deriv_index.push_back(param_idx_offset + 1);
         }
 
-        if (!global_params.Z_fine) {
+        if (!current_layer_pars.Za) {
             global_params_count++;
 
             global_derivatives.push_back(derivs.dr_dZa());
             global_deriv_index.push_back(param_idx_offset + 2);
         }
 
-        if (!global_params.phi) {
+        if (!current_layer_pars.phi) {
             global_params_count++;
 
             global_derivatives.push_back(derivs.dr_dphi());
             global_deriv_index.push_back(param_idx_offset + 3);
         }
 
-        if (!global_params.theta) {
+        if (!current_layer_pars.theta) {
             global_params_count++;
 
             global_derivatives.push_back(derivs.dr_dtheta());
             global_deriv_index.push_back(param_idx_offset + 4);
         }
 
-        if (!global_params.psi) {
+        if (!current_layer_pars.psi) {
             global_params_count++;
 
             global_derivatives.push_back(derivs.dr_dpsi());
@@ -599,7 +648,17 @@ class MilleBuilder
         local_derivatives.push_back(derivs.dr_dtx());
         local_derivatives.push_back(derivs.dr_dty());
 
-        mille.mille(5, local_derivatives.data(), global_params_count, global_derivatives.data(), global_deriv_index.data(), 0, 0);
+        mille.mille(5,
+                    local_derivatives.data(),
+                    global_params_count,
+                    global_derivatives.data(),
+                    global_deriv_index.data(),
+                    distance({bx, by, bz},
+                             {tx, ty, 1.0},
+                             {U + current_layer_pars.Xa, V + current_layer_pars.Ya, Z + current_layer_pars.Za},
+                             current_layer_pars.wire_rotation)
+                        - dr,
+                    sigma);
     }
 
     /* Call Mille::end()
@@ -611,7 +670,7 @@ class MilleBuilder
     auto kill() -> void { mille.kill(); }
 
   private:
-    std::vector<global_parameters<float>> globals;
+    std::vector<global_parameters<float>> layers_global_pars;
     Mille mille;
 };
 
