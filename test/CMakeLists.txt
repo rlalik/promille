@@ -28,6 +28,7 @@ endif()
 add_executable(StrawAlignment_test
   source/test_rotation_matrix.cpp
   source/test_operations.cpp
+  source/test_derivatives.cpp
   source/test_mille.cpp
   ../include/StrawAlignment/Mille.cc
 )
