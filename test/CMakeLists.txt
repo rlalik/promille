@@ -30,6 +30,7 @@ add_executable(StrawAlignment_test
   source/test_operations.cpp
   source/test_derivatives.cpp
   source/test_mille.cpp
+  source/test_euler_angles.cpp
   ../include/StrawAlignment/Mille.cc
 )
 

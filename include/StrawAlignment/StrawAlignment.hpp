@@ -674,7 +674,7 @@ class MilleBuilder
     }
     ~MilleBuilder() {};
 
-    auto add_planes_global(
+    auto add_planes_globals(
         parameter<float> Xa, parameter<float> Ya, parameter<float> Za, parameter<float> psi, parameter<float> theta, parameter<float> phi)
     {
         global_parameters<float> gp = {Xa, Ya, Za, psi, theta, phi};
@@ -685,17 +685,14 @@ class MilleBuilder
      * Add set of local variables for given layer of straws.
      *
      * @param layer layer number
-     * @param x0 base vector x-coordinate
-     * @param y0 base vector y-coordinate
-     * @param z0 base vector z-coordinate
+     * @param bx base vector x-coordinate
+     * @param by base vector y-coordinate
+     * @param bz base vector z-coordinate
      * @param tx direction vector x-component
      * @param ty direction vector y-component
-     * @param wx wire position x
-     * @param wy wire position y
-     * @param wz wire position z
-     * @param rx wire rotation around x
-     * @param ry wire rotation around y
-     * @param rz wire rotation around z
+     * @param U wire position x
+     * @param V wire position y
+     * @param Z wire position z
      */
     auto add_local(int layer, float bx, float by, float bz, float tx, float ty, float U, float V, float Z, float dr, float sigma)
     {
@@ -843,12 +840,12 @@ class MilleBuilder
                 if (infile.eof())
                     break;
 
-                add_planes_global({x, to_kind(bx)},
-                                  {y, to_kind(by)},
-                                  {z, to_kind(bz)},
-                                  {psi * TMath::DegToRad(), to_kind(bpsi)},
-                                  {theta * TMath::DegToRad(), to_kind(btheta)},
-                                  {phi * TMath::DegToRad(), to_kind(bpsi)});
+                add_planes_globals({x, to_kind(bx)},
+                                   {y, to_kind(by)},
+                                   {z, to_kind(bz)},
+                                   {psi * TMath::DegToRad(), to_kind(bpsi)},
+                                   {theta * TMath::DegToRad(), to_kind(btheta)},
+                                   {phi * TMath::DegToRad(), to_kind(bpsi)});
             }
         } else if (config_word == "MATRIX") {
             double x, y, z, r11, r12, r13, r21, r22, r23, r31, r32, r33;
@@ -862,12 +859,12 @@ class MilleBuilder
                 auto r = geom::make_rotation_matrix(r11, r12, r13, r21, r22, r23, r31, r32, r33);
                 RotationZYX ra(r);
 
-                add_planes_global({x, to_kind(bx)},
-                                  {y, to_kind(by)},
-                                  {z, to_kind(bz)},
-                                  {ra.Psi(), to_kind(bpsi)},
-                                  {ra.Theta(), to_kind(btheta)},
-                                  {ra.Phi(), to_kind(bpsi)});
+                add_planes_globals({x, to_kind(bx)},
+                                   {y, to_kind(by)},
+                                   {z, to_kind(bz)},
+                                   {ra.Psi(), to_kind(bpsi)},
+                                   {ra.Theta(), to_kind(btheta)},
+                                   {ra.Phi(), to_kind(bpsi)});
             }
         } else {
             abort();

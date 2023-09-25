@@ -97,61 +97,61 @@ auto main(int argc, char* argv[]) -> int
     if (input_data_file.length()) {
         mille.read_global_data(input_data_file);
     } else {
-        mille.add_planes_global({0, SA::Kind::FREE},
-                                {0, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED},
-                                {TMath::DegToRad() * 0, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED});
+        mille.add_planes_globals({0, SA::Kind::FREE},
+                                 {0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED},
+                                 {TMath::DegToRad() * 0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED});
 
-        mille.add_planes_global({0, SA::Kind::FIXED},
-                                {0, SA::Kind::FREE},
-                                {0, SA::Kind::FIXED},
-                                {TMath::DegToRad() * 90, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED});
+        mille.add_planes_globals({0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FREE},
+                                 {0, SA::Kind::FIXED},
+                                 {TMath::DegToRad() * 90, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED});
 
-        mille.add_planes_global({0, SA::Kind::FIXED},
-                                {0, SA::Kind::FREE},
-                                {0, SA::Kind::FIXED},
-                                {TMath::DegToRad() * 90, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED});
+        mille.add_planes_globals({0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FREE},
+                                 {0, SA::Kind::FIXED},
+                                 {TMath::DegToRad() * 90, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED});
 
-        mille.add_planes_global({0, SA::Kind::FREE},
-                                {0, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED},
-                                {TMath::DegToRad() * 0, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED});
+        mille.add_planes_globals({0, SA::Kind::FREE},
+                                 {0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED},
+                                 {TMath::DegToRad() * 0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED});
 
-        mille.add_planes_global({0, SA::Kind::FREE},
-                                {0, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED},
-                                {TMath::DegToRad() * 0, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED});
+        mille.add_planes_globals({0, SA::Kind::FREE},
+                                 {0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED},
+                                 {TMath::DegToRad() * 0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED});
 
-        mille.add_planes_global({0, SA::Kind::FIXED},
-                                {0, SA::Kind::FREE},
-                                {0, SA::Kind::FIXED},
-                                {TMath::DegToRad() * 90, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED});
+        mille.add_planes_globals({0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FREE},
+                                 {0, SA::Kind::FIXED},
+                                 {TMath::DegToRad() * 90, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED});
 
-        mille.add_planes_global({0, SA::Kind::FREE},
-                                {0, SA::Kind::FREE},
-                                {0, SA::Kind::FIXED},
-                                {TMath::DegToRad() * 45, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED});
+        mille.add_planes_globals({0, SA::Kind::FREE},
+                                 {0, SA::Kind::FREE},
+                                 {0, SA::Kind::FIXED},
+                                 {TMath::DegToRad() * 45, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED});
 
-        mille.add_planes_global({0, SA::Kind::FREE},
-                                {0, SA::Kind::FREE},
-                                {0, SA::Kind::FIXED},
-                                {TMath::DegToRad() * -45, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED},
-                                {0, SA::Kind::FIXED});
+        mille.add_planes_globals({0, SA::Kind::FREE},
+                                 {0, SA::Kind::FREE},
+                                 {0, SA::Kind::FIXED},
+                                 {TMath::DegToRad() * -45, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED},
+                                 {0, SA::Kind::FIXED});
     }
 
     mille.print(true);
