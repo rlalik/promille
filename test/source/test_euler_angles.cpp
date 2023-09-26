@@ -1,9 +1,6 @@
 #include <StrawAlignment/EulerAngles.hpp>
 #include <StrawAlignment/StrawAlignment.hpp>
-
 #include <gtest/gtest.h>
-
-
 
 TEST(EulerAngles, ZYZ)
 {

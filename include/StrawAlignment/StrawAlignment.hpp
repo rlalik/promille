@@ -12,6 +12,7 @@
 #include <Math/Rotation3D.h>
 #include <Math/RotationZYX.h>
 #include <Math/Vector3D.h>
+#include <StrawAlignment/EulerAngles.hpp>
 #include <TMath.h>
 
 #include "Mille.h"
@@ -31,38 +32,11 @@ namespace SA
 
 namespace geom
 {
-// clang-format off
-template<typename T> constexpr auto R11(T psi, T theta, T phi) -> T { return cos(theta)*cos(psi); }
-template<typename T> constexpr auto R12(T psi, T theta, T phi) -> T { return cos(theta)*sin(psi); }
-template<typename T> constexpr auto R13(T psi, T theta, T phi) -> T { return -sin(theta); }
-
-template<typename T> constexpr auto R21(T psi, T theta, T phi) -> T { return sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi); }
-template<typename T> constexpr auto R22(T psi, T theta, T phi) -> T { return sin(phi)*sin(theta)*sin(psi) + cos(phi)*cos(psi); }
-template<typename T> constexpr auto R23(T psi, T theta, T phi) -> T { return sin(phi)*cos(theta); }
-
-template<typename T> constexpr auto R31(T psi, T theta, T phi) -> T { return cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi); }
-template<typename T> constexpr auto R32(T psi, T theta, T phi) -> T { return cos(phi)*sin(theta)*sin(psi) - sin(phi)*cos(psi); }
-template<typename T> constexpr auto R33(T psi, T theta, T phi) -> T { return cos(phi)*cos(theta); }
-// clang-format on
 
 template<typename T>
 constexpr auto sign(T value) -> T
 {
     return std::signbit(value) ? -1 : 1;
-}
-
-template<typename T>
-constexpr auto make_rotation_matrix(T psi, T theta, T phi) -> Rotation3D
-{
-    return Rotation3D(R11(psi, theta, phi),
-                      R12(psi, theta, phi),
-                      R13(psi, theta, phi),
-                      R21(psi, theta, phi),
-                      R22(psi, theta, phi),
-                      R23(psi, theta, phi),
-                      R31(psi, theta, phi),
-                      R32(psi, theta, phi),
-                      R33(psi, theta, phi));
 }
 
 template<typename T>
@@ -95,526 +69,325 @@ inline auto distance(XYZPoint base1, XYZVector dir1, XYZPoint base2, XYZVector d
 
 }  // namespace geom
 
-template<typename T>
+template<typename T, template<class> class R>
 struct derivatives
 {
-    T cos_psi;
-    T sin_psi;
+    // gloal translational corrections
+    T gx {0};
+    T gy {0};
+    T gz {0};
 
-    T cos_theta;
-    T sin_theta;
+    // gloal rotational corrections
+    T ga {0};
+    T gb {0};
+    T gc {0};
 
-    T cos_phi;
-    T sin_phi;
+    // translational alignment of straws
+    T ax {0};
+    T ay {0};
+    T az {0};
 
-    T sin_theta_cos_phi;
-    T sin_theta_sin_phi;
-    // T cos_phi_sin_phi;
-    // T sin_theta_cos_theta;
-    T cos_psi_cos_phi;
-    // T cos_psi_cos_psi;
-    T cos_psi_cos_theta;
-    T cos_psi_sin_phi;
-    T sin_psi_cos_phi;
-    // T sin_psi_cos_psi;
-    // T cos_psi_sin_psi;
-    T sin_psi_cos_theta;
-    T sin_psi_sin_phi;
-    T cos_theta_cos_phi;
-    // T cos_theta_cos_theta;
-    T cos_theta_sin_phi;
-    // T sin_psi_sin_psi;
-    // T sin_theta_sin_theta;
-    // T sin_phi_cos_phi;
-    // T sin_phi_sin_phi;
-    T cos_psi_sin_theta;
-    T sin_psi_sin_theta;
-    // T cos_theta_sin_theta;
-    // T cos_phi_cos_phi;
-    //
-    // T sin_psi_sin_theta_sin_theta;
-    // T cos_psi_sin_psi_cos_phi;
-    // T cos_psi_sin_psi_cos_psi;
-    // T cos_phi_cos_phi_sin_phi;
-    // T cos_psi_sin_theta_sin_theta;
-    T sin_psi_cos_theta_sin_phi;
-    // T cos_psi_sin_phi_cos_phi;
-    // T sin_theta_sin_theta_sin_theta;
-    // T cos_theta_sin_phi_cos_phi;
-    // T sin_phi_sin_phi_sin_phi;
-    // T cos_psi_cos_psi_cos_phi;
-    // T cos_theta_cos_theta_sin_theta;
-    // T cos_psi_cos_psi_cos_psi;
-    // T sin_theta_cos_theta_cos_theta;
-    T cos_psi_sin_theta_sin_phi;
-    // T cos_psi_cos_theta_cos_theta;
-    // T sin_theta_sin_theta_sin_phi;
-    // T sin_psi_sin_psi_cos_psi;
-    // T cos_psi_cos_phi_cos_phi;
-    // T sin_phi_cos_phi_sin_phi;
-    // T cos_theta_cos_theta_sin_phi;
-    // T sin_theta_cos_phi_cos_phi;
-    // T cos_theta_sin_theta_sin_phi;
-    T sin_psi_sin_theta_cos_phi;
-    // T sin_phi_sin_phi_cos_phi;
-    // T sin_psi_cos_theta_sin_theta;
-    T cos_psi_sin_theta_cos_phi;
-    // T sin_theta_sin_theta_cos_phi;
-    // T cos_psi_cos_theta_sin_theta;
-    // T sin_theta_sin_phi_cos_phi;
-    // T sin_phi_cos_phi_cos_phi;
-    // T cos_theta_cos_theta_cos_phi;
-    // T cos_psi_sin_psi_cos_theta;
-    // T sin_psi_cos_psi_cos_theta;
-    // T cos_theta_sin_theta_sin_theta;
-    T cos_psi_cos_theta_sin_phi;
-    // T cos_phi_sin_phi_sin_phi;
-    // T cos_phi_cos_phi_cos_phi;
-    // T cos_psi_cos_psi_cos_theta;
-    T sin_psi_cos_theta_cos_phi;
-    // T sin_psi_sin_psi_cos_theta;
-    T cos_psi_cos_theta_cos_phi;
-    // T sin_psi_cos_psi_sin_theta;
-    // T sin_theta_cos_theta_sin_theta;
-    // T cos_theta_cos_phi_sin_phi;
-    // T sin_psi_sin_theta_cos_theta;
-    // T cos_phi_sin_phi_cos_phi;
-    // T cos_theta_sin_theta_cos_phi;
-    // T sin_psi_cos_psi_sin_phi;
-    // T sin_theta_cos_theta_sin_phi;
-    // T sin_psi_cos_psi_sin_psi;
-    // T sin_psi_sin_psi_sin_theta;
-    // T cos_theta_sin_phi_sin_phi;
-    // T cos_psi_cos_psi_sin_phi;
-    // T cos_psi_cos_psi_sin_psi;
-    // T sin_psi_cos_phi_sin_phi;
-    // T sin_psi_sin_psi_sin_phi;
-    // T sin_psi_sin_psi_sin_psi;
-    // T cos_psi_cos_phi_sin_phi;
-    // T cos_psi_sin_psi_sin_theta;
-    // T sin_psi_cos_psi_cos_phi;
-    // T sin_psi_cos_psi_cos_psi;
-    // T sin_theta_cos_theta_cos_phi;
-    // T sin_theta_cos_phi_sin_phi;
-    T sin_psi_sin_theta_sin_phi;
-    // T sin_psi_cos_theta_cos_theta;
-    // T sin_psi_sin_phi_sin_phi;
-    // T sin_psi_cos_phi_cos_phi;
-    // T cos_psi_sin_psi_sin_phi;
-    // T cos_psi_sin_psi_sin_psi;
-    // T cos_psi_cos_psi_sin_theta;
-    // T cos_psi_sin_theta_cos_theta;
-    // T sin_psi_sin_psi_cos_phi;
-    // T sin_theta_sin_theta_cos_theta;
-    // T sin_theta_sin_phi_sin_phi;
-    // T cos_psi_sin_phi_sin_phi;
-    // T cos_theta_cos_theta_cos_theta;
-    // T cos_theta_sin_theta_cos_theta;
-    // T cos_theta_cos_phi_cos_phi;
-    // T sin_psi_sin_phi_cos_phi;
+    // local system straw coordinates
+    T sx {0};
+    T sy {0};
+    T sz {0};
 
-    T U;
-    T V;
-    T Z;
-    T Xa;
-    T Ya;
-    T Za;
-    T bx;
-    T by;
-    T bz;
-    T tx;
-    T ty;
-
-    T sx;
-    T sy;
-    T sz;
+    // track base
+    T bx {0};
+    T by {0};
+    T bz {0};
+    // track direction
+    T tx {0};
+    T ty {0};
 
     T common_0;
     T common_1;
     T common_2;
     T common_3;
     T common_4;
-    T common_5;
-    T common_6;
-    T common_7;
 
-    T common_10;
-    T common_11;
-    T common_12;
-    T common_13;
+    SA::euler::euler_base<T> wm;
 
-    derivatives(T psi, T theta, T phi, T U, T V, T Z, T Xa, T Ya, T Za, T bx, T by, T bz, T tx, T ty)
-        : U(U)
-        , V(V)
-        , Z(Z)
-        , Xa(Xa)
-        , Ya(Ya)
-        , Za(Za)
-        , bx(bx)
-        , by(by)
-        , bz(bz)
-        , tx(tx)
-        , ty(ty)
+    derivatives(T gx, T gy, T gz, T ga, T gb, T gc, T ax, T ay, T az, T alpha, T beta, T gamma)
+        : gx(gx)
+        , gy(gy)
+        , gz(gz)
+        , ga(ga)
+        , gb(gb)
+        , gc(gc)
+        , ax(ax)
+        , ay(ay)
+        , az(az)
+        , wm(R<T>(alpha, beta, gamma))
     {
-        cos_psi = cos(psi);
-        sin_psi = sin(psi);
+        // std::cout << "Gt" << ROOT::Math::XYZVector(gx, gy, gz) << "\nGr" << ROOT::Math::XYZVector(ga, gb, gc) << "\nAt"
+        // << ROOT::Math::XYZVector(ax, ay, az) << "\nWM: " << euler::make_rotation_matrix(wm) << '\n';
+    }
 
-        cos_theta = cos(theta);
-        sin_theta = sin(theta);
+    auto update(T sx_, T sy_, T sz_, T bx_, T by_, T bz_, T tx_, T ty_) -> void
+    {
+        sx = sx_;
+        sy = sy_;
+        sz = sz_;
+        bx = bx_;
+        by = by_;
+        bz = bz_;
+        tx = tx_;
+        ty = ty_;
 
-        cos_phi = cos(phi);
-        sin_phi = sin(phi);
-
-        sin_theta_cos_phi = sin_theta * cos_phi;
-        sin_theta_sin_phi = sin_theta * sin_phi;
-        // cos_phi_sin_phi = cos_phi * sin_phi;
-        // sin_theta_cos_theta = sin_theta * cos_theta;
-        cos_psi_cos_phi = cos_psi * cos_phi;
-        // cos_psi_cos_psi = cos_psi * cos_psi;
-        cos_psi_cos_theta = cos_psi * cos_theta;
-        cos_psi_sin_phi = cos_psi * sin_phi;
-        sin_psi_cos_phi = sin_psi * cos_phi;
-        // sin_psi_cos_psi = sin_psi * cos_psi;
-        // cos_psi_sin_psi = cos_psi * sin_psi;
-        sin_psi_cos_theta = sin_psi * cos_theta;
-        sin_psi_sin_phi = sin_psi * sin_phi;
-        cos_theta_cos_phi = cos_theta * cos_phi;
-        // cos_theta_cos_theta = cos_theta * cos_theta;
-        cos_theta_sin_phi = cos_theta * sin_phi;
-        // sin_psi_sin_psi = sin_psi * sin_psi;
-        // sin_theta_sin_theta = sin_theta * sin_theta;
-        // sin_phi_cos_phi = sin_phi * cos_phi;
-        // sin_phi_sin_phi = sin_phi * sin_phi;
-        cos_psi_sin_theta = cos_psi * sin_theta;
-        sin_psi_sin_theta = sin_psi * sin_theta;
-        // cos_theta_sin_theta = cos_theta * sin_theta;
-        // cos_phi_cos_phi = cos_phi * cos_phi;
-        //
-        // sin_psi_sin_theta_sin_theta = sin_psi * sin_theta * sin_theta;
-        // cos_psi_sin_psi_cos_phi = cos_psi * sin_psi * cos_phi;
-        // cos_psi_sin_psi_cos_psi = cos_psi * sin_psi * cos_psi;
-        // cos_phi_cos_phi_sin_phi = cos_phi * cos_phi * sin_phi;
-        // cos_psi_sin_theta_sin_theta = cos_psi * sin_theta * sin_theta;
-        sin_psi_cos_theta_sin_phi = sin_psi * cos_theta * sin_phi;
-        // cos_psi_sin_phi_cos_phi = cos_psi * sin_phi * cos_phi;
-        // sin_theta_sin_theta_sin_theta = sin_theta * sin_theta * sin_theta;
-        // cos_theta_sin_phi_cos_phi = cos_theta * sin_phi * cos_phi;
-        // sin_phi_sin_phi_sin_phi = sin_phi * sin_phi * sin_phi;
-        // cos_psi_cos_psi_cos_phi = cos_psi * cos_psi * cos_phi;
-        // cos_theta_cos_theta_sin_theta = cos_theta * cos_theta * sin_theta;
-        // cos_psi_cos_psi_cos_psi = cos_psi * cos_psi * cos_psi;
-        // sin_theta_cos_theta_cos_theta = sin_theta * cos_theta * cos_theta;
-        cos_psi_sin_theta_sin_phi = cos_psi * sin_theta * sin_phi;
-        // cos_psi_cos_theta_cos_theta = cos_psi * cos_theta * cos_theta;
-        // sin_theta_sin_theta_sin_phi = sin_theta * sin_theta * sin_phi;
-        // sin_psi_sin_psi_cos_psi = sin_psi * sin_psi * cos_psi;
-        // cos_psi_cos_phi_cos_phi = cos_psi * cos_phi * cos_phi;
-        // sin_phi_cos_phi_sin_phi = sin_phi * cos_phi * sin_phi;
-        // cos_theta_cos_theta_sin_phi = cos_theta * cos_theta * sin_phi;
-        // sin_theta_cos_phi_cos_phi = sin_theta * cos_phi * cos_phi;
-        // cos_theta_sin_theta_sin_phi = cos_theta * sin_theta * sin_phi;
-        sin_psi_sin_theta_cos_phi = sin_psi * sin_theta * cos_phi;
-        // sin_phi_sin_phi_cos_phi = sin_phi * sin_phi * cos_phi;
-        // sin_psi_cos_theta_sin_theta = sin_psi * cos_theta * sin_theta;
-        cos_psi_sin_theta_cos_phi = cos_psi * sin_theta * cos_phi;
-        // sin_theta_sin_theta_cos_phi = sin_theta * sin_theta * cos_phi;
-        // cos_psi_cos_theta_sin_theta = cos_psi * cos_theta * sin_theta;
-        // sin_theta_sin_phi_cos_phi = sin_theta * sin_phi * cos_phi;
-        // sin_phi_cos_phi_cos_phi = sin_phi * cos_phi * cos_phi;
-        // cos_theta_cos_theta_cos_phi = cos_theta * cos_theta * cos_phi;
-        // cos_psi_sin_psi_cos_theta = cos_psi * sin_psi * cos_theta;
-        // sin_psi_cos_psi_cos_theta = sin_psi * cos_psi * cos_theta;
-        // cos_theta_sin_theta_sin_theta = cos_theta * sin_theta * sin_theta;
-        cos_psi_cos_theta_sin_phi = cos_psi * cos_theta * sin_phi;
-        // cos_phi_sin_phi_sin_phi = cos_phi * sin_phi * sin_phi;
-        // cos_phi_cos_phi_cos_phi = cos_phi * cos_phi * cos_phi;
-        // cos_psi_cos_psi_cos_theta = cos_psi * cos_psi * cos_theta;
-        sin_psi_cos_theta_cos_phi = sin_psi * cos_theta * cos_phi;
-        // sin_psi_sin_psi_cos_theta = sin_psi * sin_psi * cos_theta;
-        cos_psi_cos_theta_cos_phi = cos_psi * cos_theta * cos_phi;
-        // sin_psi_cos_psi_sin_theta = sin_psi * cos_psi * sin_theta;
-        // sin_theta_cos_theta_sin_theta = sin_theta * cos_theta * sin_theta;
-        // cos_theta_cos_phi_sin_phi = cos_theta * cos_phi * sin_phi;
-        // sin_psi_sin_theta_cos_theta = sin_psi * sin_theta * cos_theta;
-        // cos_phi_sin_phi_cos_phi = cos_phi * sin_phi * cos_phi;
-        // cos_theta_sin_theta_cos_phi = cos_theta * sin_theta * cos_phi;
-        // sin_psi_cos_psi_sin_phi = sin_psi * cos_psi * sin_phi;
-        // sin_theta_cos_theta_sin_phi = sin_theta * cos_theta * sin_phi;
-        // sin_psi_cos_psi_sin_psi = sin_psi * cos_psi * sin_psi;
-        // sin_psi_sin_psi_sin_theta = sin_psi * sin_psi * sin_theta;
-        // cos_theta_sin_phi_sin_phi = cos_theta * sin_phi * sin_phi;
-        // cos_psi_cos_psi_sin_phi = cos_psi * cos_psi * sin_phi;
-        // cos_psi_cos_psi_sin_psi = cos_psi * cos_psi * sin_psi;
-        // sin_psi_cos_phi_sin_phi = sin_psi * cos_phi * sin_phi;
-        // sin_psi_sin_psi_sin_phi = sin_psi * sin_psi * sin_phi;
-        // sin_psi_sin_psi_sin_psi = sin_psi * sin_psi * sin_psi;
-        // cos_psi_cos_phi_sin_phi = cos_psi * cos_phi * sin_phi;
-        // cos_psi_sin_psi_sin_theta = cos_psi * sin_psi * sin_theta;
-        // sin_psi_cos_psi_cos_phi = sin_psi * cos_psi * cos_phi;
-        // sin_psi_cos_psi_cos_psi = sin_psi * cos_psi * cos_psi;
-        // sin_theta_cos_theta_cos_phi = sin_theta * cos_theta * cos_phi;
-        // sin_theta_cos_phi_sin_phi = sin_theta * cos_phi * sin_phi;
-        sin_psi_sin_theta_sin_phi = sin_psi * sin_theta * sin_phi;
-        // sin_psi_cos_theta_cos_theta = sin_psi * cos_theta * cos_theta;
-        // sin_psi_sin_phi_sin_phi = sin_psi * sin_phi * sin_phi;
-        // sin_psi_cos_phi_cos_phi = sin_psi * cos_phi * cos_phi;
-        // cos_psi_sin_psi_sin_phi = cos_psi * sin_psi * sin_phi;
-        // cos_psi_sin_psi_sin_psi = cos_psi * sin_psi * sin_psi;
-        // cos_psi_cos_psi_sin_theta = cos_psi * cos_psi * sin_theta;
-        // cos_psi_sin_theta_cos_theta = cos_psi * sin_theta * cos_theta;
-        // sin_psi_sin_psi_cos_phi = sin_psi * sin_psi * cos_phi;
-        // sin_theta_sin_theta_cos_theta = sin_theta * sin_theta * cos_theta;
-        // sin_theta_sin_phi_sin_phi = sin_theta * sin_phi * sin_phi;
-        // cos_psi_sin_phi_sin_phi = cos_psi * sin_phi * sin_phi;
-        // cos_theta_cos_theta_cos_theta = cos_theta * cos_theta * cos_theta;
-        // cos_theta_sin_theta_cos_theta = cos_theta * sin_theta * cos_theta;
-        // cos_theta_cos_phi_cos_phi = cos_theta * cos_phi * cos_phi;
-        // sin_psi_sin_phi_cos_phi = sin_psi * sin_phi * cos_phi;
+        // std::cout << "Sl" << ROOT::Math::XYZVector(sx, sy, sz) << "\nBt" << ROOT::Math::XYZVector(bx, by, bz) << "\nTt"
+        // << ROOT::Math::XYZVector(tx, ty, 1) << '\n';
 
         // Manually optimized shortcuts for frequently appearing expressions.
         // Touch it on your own risk.
-        sx = U + Xa;
-        sy = V + Ya;
-        sz = Z + Za;
+        /*
+                common_0 = abs((-ay + by - sx * wm.R21 - sy * wm.R22 - sz * wm.R23) * (wm.R12 - tx * wm.R32)
+                               + (-ax + bx - sx * wm.R11 - sy * wm.R12 - sz * wm.R13) * (-wm.R22 + ty * wm.R32)
+                               + (-(ty * wm.R12) + tx * wm.R22) * (-az + bz - sx * wm.R31 - sy * wm.R32 - sz * wm.R33));
+                common_1 = sqrt(pow(-(ty * wm.R12) + tx * wm.R22, 2) + pow(wm.R12 - tx * wm.R32, 2) + pow(-wm.R22 + ty * wm.R32, 2));
+                common_2 = pow(pow(-(ty * wm.R12) + tx * wm.R22, 2) + pow(wm.R12 - tx * wm.R32, 2) + pow(-wm.R22 + ty * wm.R32, 2), 3.0
+           / 2.0); common_3 = ((-ay + by - sx * wm.R21 - sy * wm.R22 - sz * wm.R23) * (wm.R12 - tx * wm.R32)
+                            + (-ax + bx - sx * wm.R11 - sy * wm.R12 - sz * wm.R13) * (-wm.R22 + ty * wm.R32)
+                            + (-(ty * wm.R12) + tx * wm.R22) * (-az + bz - sx * wm.R31 - sy * wm.R32 - sz * wm.R33));*/
 
-#define VER2
-
-#ifdef VER2
-        common_0 = by + sz * sin_psi_cos_theta - sx * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-            - sy * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi);
-        common_1 = -(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi;
-        common_2 = bz - sz * cos_psi_cos_theta - sx * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-            - sy * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi);
-        common_3 = tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi;
-        common_4 = -(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi;
-        common_5 = bx - sx * cos_theta_cos_phi + sy * cos_theta_sin_phi - sz * sin_theta;
-        common_6 = pow(common_1, 2.0) + pow(common_4, 2.0) + pow(common_3, 2.0);
-        common_7 = 2.0 * pow(common_6, 3.0 / 2.0);
-
-        common_10 = common_5 * common_4 + common_3 * common_2 + common_1 * common_0;
-        common_11 = abs(common_10);
-        common_12 = sqrt(common_6) * common_11;
-        common_13 = common_10 / common_12;
-#else
-        common_0 = sz * sin_psi_cos_theta - sx * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi)
-            - sy * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi);
-        common_1 = -(cos_theta_sin_phi)-tx * sin_psi_cos_phi - tx * cos_psi_sin_theta_sin_phi;
-        common_2 = bz - sz * cos_psi_cos_theta - sx * (sin_psi_sin_phi - cos_psi_sin_theta_cos_phi)
-            - sy * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi);
-        common_3 = tx * cos_psi_cos_phi + ty * cos_theta_sin_phi - tx * sin_psi_sin_theta_sin_phi;
-        common_4 = -(cos_psi_cos_phi) + ty * sin_psi_cos_phi + ty * cos_psi_sin_theta_sin_phi + sin_psi_sin_theta_sin_phi;
-        common_5 = bx - sx * cos_theta_cos_phi + sy * cos_theta_sin_phi - sz * sin_theta;
-        common_6 = pow(common_1, 2.0) + pow(common_4, 2.0) + pow(common_3, 2.0);
-        common_7 = 2.0 * pow(common_6, 3.0 / 2.0);
-
-        common_10 = common_5 * common_4 + common_3 * common_2 + common_1 * (by + common_0);
-        common_11 = abscommon_10;
-        common_12 = sqrt(common_6) * common_11;
-#endif
+        common_0 = pow(wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32, 2)
+            + pow(gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32, 2)
+            + pow(-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32, 2);
+        common_1 = pow(common_0, 3. / 2.);
+        common_2 = ((-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32)
+                        * (-2 * az + bz - sx * (gb * wm.R11 - ga * wm.R21 + wm.R31) - sy * (gb * wm.R12 - ga * wm.R22 + wm.R32)
+                           - sz * (gb * wm.R13 - ga * wm.R23 + wm.R33))
+                    + (wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32)
+                        * (-2 * ay + by - sx * (-(gc * wm.R11) + wm.R21 + ga * wm.R31) - sy * (-(gc * wm.R12) + wm.R22 + ga * wm.R32)
+                           - sz * (-(gc * wm.R13) + wm.R23 + ga * wm.R33))
+                    + (gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32)
+                        * (-2 * ax + bx - sx * (wm.R11 - gc * wm.R21 + gb * wm.R31) - sy * (wm.R12 - gc * wm.R22 + gb * wm.R32)
+                           - sz * (wm.R13 - gc * wm.R23 + gb * wm.R33)));
+        common_3 = fabs(common_2);
+        common_4 = sqrt(common_0);
     }
 
     // Manually optimized shortcuts for frequently appearing expressions.
     // Touch it on your own risk.
 
-#ifdef VER2
-    // #    include "StrawAlignment/functions_bodies.h"
+    constexpr auto dr_dgx() -> T { return 0; }
 
-    constexpr auto dr_dpsi() -> T
+    constexpr auto dr_dgy() -> T { return 0; }
+
+    constexpr auto dr_dgz() -> T { return 0; }
+
+    constexpr auto dr_dga() -> T
     {
-        return -1 / 2.0
-            * ((2.0 * (-(tx * sin_psi_cos_phi) - tx * cos_psi_sin_theta_sin_phi) * common_3
-                + 2.0 * common_1 * (-(tx * cos_psi_cos_phi) + tx * sin_psi_sin_theta_sin_phi)
-                + 2.0 * common_4 * (ty * cos_psi_cos_phi + sin_psi_cos_phi + cos_psi_sin_theta_sin_phi - ty * sin_psi_sin_theta_sin_phi))
-               * common_11)
-            / pow(common_6, 3.0 / 2.0)
-            + (common_10
-               * (common_5 * (ty * cos_psi_cos_phi + sin_psi_cos_phi + cos_psi_sin_theta_sin_phi - ty * sin_psi_sin_theta_sin_phi)
-                  + common_1
-                      * (sz * cos_psi_cos_theta + sy * sin_psi_cos_phi + sy * cos_psi_sin_theta_sin_phi
-                         - sx * (-(sin_psi_sin_phi) + cos_psi_sin_theta_cos_phi))
-                  + (-(tx * sin_psi_cos_phi) - tx * cos_psi_sin_theta_sin_phi) * common_2
-                  + (-(tx * cos_psi_cos_phi) + tx * sin_psi_sin_theta_sin_phi) * common_0
-                  + common_3
-                      * (-sx * (cos_psi_sin_phi + sin_psi_sin_theta_cos_phi) - sy * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi)
-                         + sz * sin_psi_cos_theta)))
-            / common_12;
+        return (((sx * wm.R21 + sy * wm.R22 + sz * wm.R23)
+                     * (-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32)
+                 + (wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32)
+                     * (-(sx * wm.R31) - sy * wm.R32 - sz * wm.R33)
+                 + tx * wm.R32
+                     * (-2 * az + bz - sx * (gb * wm.R11 - ga * wm.R21 + wm.R31) - sy * (gb * wm.R12 - ga * wm.R22 + wm.R32)
+                        - sz * (gb * wm.R13 - ga * wm.R23 + wm.R33))
+                 + tx * wm.R22
+                     * (-2 * ay + by - sx * (-(gc * wm.R11) + wm.R21 + ga * wm.R31) - sy * (-(gc * wm.R12) + wm.R22 + ga * wm.R32)
+                        - sz * (-(gc * wm.R13) + wm.R23 + ga * wm.R33))
+                 + (-(ty * wm.R22) - wm.R32)
+                     * (-2 * ax + bx - sx * (wm.R11 - gc * wm.R21 + gb * wm.R31) - sy * (wm.R12 - gc * wm.R22 + gb * wm.R32)
+                        - sz * (wm.R13 - gc * wm.R23 + gb * wm.R33)))
+                * common_2)
+            / (common_4 * common_3)
+            - ((2 * tx * wm.R22 * (wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32)
+                + 2 * (-(ty * wm.R22) - wm.R32) * (gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32)
+                + 2 * tx * wm.R32
+                    * (-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32))
+               * common_3)
+            / (2 * common_1);
     }
 
-    constexpr auto dr_dtheta() -> T
+    constexpr auto dr_dgb() -> T
     {
-        return ((ty * cos_psi_cos_theta_sin_phi + sin_psi_cos_theta_sin_phi) * common_5
-                + common_1 * (-(sx * sin_psi_cos_theta_cos_phi) + sy * sin_psi_cos_theta_sin_phi - sz * sin_psi_sin_theta)
-                + (-(sz * cos_theta) + sx * sin_theta_cos_phi - sy * sin_theta_sin_phi) * common_4
-                + (sx * cos_psi_cos_theta_cos_phi - sy * cos_psi_cos_theta_sin_phi + sz * cos_psi_sin_theta) * common_3
-                + (-(tx * sin_psi_cos_theta_sin_phi) - ty * sin_theta_sin_phi) * common_2
-                + (-(tx * cos_psi_cos_theta_sin_phi) + sin_theta_sin_phi) * common_0)
-            * common_13
-            - ((2.0 * (-(tx * cos_psi_cos_theta_sin_phi) + sin_theta_sin_phi) * common_1
-                + 2.0 * (ty * cos_psi_cos_theta_sin_phi + sin_psi_cos_theta_sin_phi) * common_4
-                + 2.0 * (-(tx * sin_psi_cos_theta_sin_phi) - ty * sin_theta_sin_phi) * common_3)
-               * common_11)
-            / common_7;
+        return (((-(sx * wm.R11) - sy * wm.R12 - sz * wm.R13)
+                     * (-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32)
+                 + (gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32)
+                     * (-(sx * wm.R31) - sy * wm.R32 - sz * wm.R33)
+                 - ty * wm.R32
+                     * (-2 * az + bz - sx * (gb * wm.R11 - ga * wm.R21 + wm.R31) - sy * (gb * wm.R12 - ga * wm.R22 + wm.R32)
+                        - sz * (gb * wm.R13 - ga * wm.R23 + wm.R33))
+                 + (-(tx * wm.R12) + wm.R32)
+                     * (-2 * ay + by - sx * (-(gc * wm.R11) + wm.R21 + ga * wm.R31) - sy * (-(gc * wm.R12) + wm.R22 + ga * wm.R32)
+                        - sz * (-(gc * wm.R13) + wm.R23 + ga * wm.R33))
+                 + ty * wm.R12
+                     * (-2 * ax + bx - sx * (wm.R11 - gc * wm.R21 + gb * wm.R31) - sy * (wm.R12 - gc * wm.R22 + gb * wm.R32)
+                        - sz * (wm.R13 - gc * wm.R23 + gb * wm.R33)))
+                * common_2)
+            / (common_4 * common_3)
+            - ((2 * (-(tx * wm.R12) + wm.R32) * (wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32)
+                + 2 * ty * wm.R12 * (gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32)
+                - 2 * ty * wm.R32
+                    * (-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32))
+               * common_3)
+            / (2 * common_1);
     }
 
-    constexpr auto dr_dphi() -> T
+    constexpr auto dr_dgc() -> T
     {
-        return -1 / 2.0
-            * ((2.0 * (-(cos_theta_cos_phi) + tx * sin_psi_sin_phi - tx * cos_psi_sin_theta_cos_phi) * common_1
-                + 2.0 * (cos_psi_sin_phi - ty * sin_psi_sin_phi + ty * cos_psi_sin_theta_cos_phi + sin_psi_sin_theta_cos_phi) * common_4
-                + 2.0 * (ty * cos_theta_cos_phi - tx * cos_psi_sin_phi - tx * sin_psi_sin_theta_cos_phi) * common_3)
-               * common_11)
-            / pow(common_6, 3.0 / 2.0)
-            + (common_10
-               * (common_5 * (cos_psi_sin_phi - ty * sin_psi_sin_phi + ty * cos_psi_sin_theta_cos_phi + sin_psi_sin_theta_cos_phi)
-                  + (sy * cos_theta_cos_phi + sx * cos_theta_sin_phi) * common_4
-                  + common_3 * (-sx * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi) - sy * (-(sin_psi_sin_phi) + cos_psi_sin_theta_cos_phi))
-                  + (ty * cos_theta_cos_phi - tx * cos_psi_sin_phi - tx * sin_psi_sin_theta_cos_phi) * common_2
-                  + (-(cos_theta_cos_phi) + tx * sin_psi_sin_phi - tx * cos_psi_sin_theta_cos_phi) * common_0
-                  + common_1
-                      * (sy * cos_psi_sin_phi + sy * sin_psi_sin_theta_cos_phi - sx * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))))
-            / common_12;
+        return (((sx * wm.R11 + sy * wm.R12 + sz * wm.R13)
+                     * (wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32)
+                 + (sx * wm.R21 + sy * wm.R22 + sz * wm.R23)
+                     * (gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32)
+                 + (-(tx * wm.R12) + ty * wm.R22)
+                     * (-2 * az + bz - sx * (gb * wm.R11 - ga * wm.R21 + wm.R31) - sy * (gb * wm.R12 - ga * wm.R22 + wm.R32)
+                        - sz * (gb * wm.R13 - ga * wm.R23 + wm.R33))
+                 - wm.R22
+                     * (-2 * ay + by - sx * (-(gc * wm.R11) + wm.R21 + ga * wm.R31) - sy * (-(gc * wm.R12) + wm.R22 + ga * wm.R32)
+                        - sz * (-(gc * wm.R13) + wm.R23 + ga * wm.R33))
+                 + wm.R12
+                     * (-2 * ax + bx - sx * (wm.R11 - gc * wm.R21 + gb * wm.R31) - sy * (wm.R12 - gc * wm.R22 + gb * wm.R32)
+                        - sz * (wm.R13 - gc * wm.R23 + gb * wm.R33)))
+                * common_2)
+            / (common_4 * common_3)
+            - ((-2 * wm.R22 * (wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32)
+                + 2 * wm.R12 * (gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32)
+                + 2 * (-(tx * wm.R12) + ty * wm.R22)
+                    * (-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32))
+               * common_3)
+            / (2 * common_1);
     }
 
-    constexpr auto dr_dXa() -> T
+    constexpr auto dr_dbx() -> T
     {
-        return (common_1 * (-(cos_psi_sin_phi)-sin_psi_sin_theta_cos_phi) - cos_theta_cos_phi * common_4
-                + (-(sin_psi_sin_phi) + cos_psi_sin_theta_cos_phi) * common_3)
-            * common_13;
+        return ((gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32) * common_2)
+            / (common_4 * common_3);
     }
 
-    constexpr auto dr_dYa() -> T
+    constexpr auto dr_dby() -> T
     {
-        return (common_1 * (-(cos_psi_cos_phi) + sin_psi_sin_theta_sin_phi) + cos_theta_sin_phi * common_4
-                + (-(sin_psi_cos_phi)-cos_psi_sin_theta_sin_phi) * common_3)
-            * common_13;
+        return ((wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32) * common_2)
+            / (common_4 * common_3);
     }
 
-    constexpr auto dr_dZa() -> T
+    constexpr auto dr_dbz() -> T
     {
-        return (sin_psi_cos_theta * common_1 - sin_theta * common_4 - cos_psi_cos_theta * common_3) * common_13;
+        return ((-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32) * common_2)
+            / (common_4 * common_3);
     }
-
-    constexpr auto dr_dbx() -> T { return common_4 * common_13; }
-
-    constexpr auto dr_dby() -> T { return common_1 * common_13; }
-
-    constexpr auto dr_dbz() -> T { return common_3 * common_13; }
 
     constexpr auto dr_dtx() -> T
     {
-        return ((cos_psi_cos_phi - sin_psi_sin_theta_sin_phi) * common_2 + (-(sin_psi_cos_phi)-cos_psi_sin_theta_sin_phi) * common_0)
-            * common_13
-            - ((2.0 * (-(sin_psi_cos_phi)-cos_psi_sin_theta_sin_phi) * common_1
-                + 2.0 * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi) * common_3)
-               * common_11)
-            / common_7;
+        return (((-(gc * wm.R12) + wm.R22 + ga * wm.R32)
+                     * (-2 * az + bz - sx * (gb * wm.R11 - ga * wm.R21 + wm.R31) - sy * (gb * wm.R12 - ga * wm.R22 + wm.R32)
+                        - sz * (gb * wm.R13 - ga * wm.R23 + wm.R33))
+                 + (-(gb * wm.R12) + ga * wm.R22 - wm.R32)
+                     * (-2 * ay + by - sx * (-(gc * wm.R11) + wm.R21 + ga * wm.R31) - sy * (-(gc * wm.R12) + wm.R22 + ga * wm.R32)
+                        - sz * (-(gc * wm.R13) + wm.R23 + ga * wm.R33)))
+                * common_2)
+            / (common_4 * common_3)
+            - ((2 * (-(gb * wm.R12) + ga * wm.R22 - wm.R32)
+                    * (wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32)
+                + 2 * (-(gc * wm.R12) + wm.R22 + ga * wm.R32)
+                    * (-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32))
+               * common_3)
+            / (2 * common_1);
     }
 
     constexpr auto dr_dty() -> T
     {
-        return (common_5 * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi) + cos_theta_sin_phi * common_2) * common_13
-            - ((2.0 * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi) * common_4 + 2.0 * cos_theta_sin_phi * common_3) * common_11)
-            / common_7;
+        return (((-wm.R12 + gc * wm.R22 - gb * wm.R32)
+                     * (-2 * az + bz - sx * (gb * wm.R11 - ga * wm.R21 + wm.R31) - sy * (gb * wm.R12 - ga * wm.R22 + wm.R32)
+                        - sz * (gb * wm.R13 - ga * wm.R23 + wm.R33))
+                 + (gb * wm.R12 - ga * wm.R22 + wm.R32)
+                     * (-2 * ax + bx - sx * (wm.R11 - gc * wm.R21 + gb * wm.R31) - sy * (wm.R12 - gc * wm.R22 + gb * wm.R32)
+                        - sz * (wm.R13 - gc * wm.R23 + gb * wm.R33)))
+                * common_2)
+            / (common_4 * common_3)
+            - ((2 * (gb * wm.R12 - ga * wm.R22 + wm.R32)
+                    * (gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32)
+                + 2 * (-wm.R12 + gc * wm.R22 - gb * wm.R32)
+                    * (-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32))
+               * common_3)
+            / (2 * common_1);
     }
 
-#else
-    constexpr auto dr_dpsi() -> T
-    {
-        return -(((-(tx * sin_psi_cos_phi) - tx * cos_psi_sin_theta_sin_phi) * common_3
-                  + common_1 * (-(tx * cos_psi_cos_phi) + tx * sin_psi_sin_theta_sin_phi)
-                  + common_4 * (ty * cos_psi_cos_phi + sin_psi_cos_phi + cos_psi_sin_theta_sin_phi - ty * sin_psi_sin_theta_sin_phi))
-                 * common_11)
-            / pow(common_6, 3.0 / 2.0)
-            + (common_10
-               * (common_5 * (ty * cos_psi_cos_phi + sin_psi_cos_phi + cos_psi_sin_theta_sin_phi - ty * sin_psi_sin_theta_sin_phi)
-                  + common_1
-                      * (sz * cos_psi_cos_theta - sx * (-(sin_psi_sin_phi) + cos_psi_sin_theta_cos_phi)
-                         - sy * (-(sin_psi_cos_phi)-cos_psi_sin_theta_sin_phi))
-                  + (-(tx * sin_psi_cos_phi) - tx * cos_psi_sin_theta_sin_phi) * common_2 + common_3 * common_0
-                  + (-(tx * cos_psi_cos_phi) + tx * sin_psi_sin_theta_sin_phi) * (by + common_0)))
-            / common_12;
-    }
-
-    constexpr auto dr_dtheta() -> T
-    {
-        return (((ty * cos_psi_cos_theta_sin_phi + sin_psi_cos_theta_sin_phi) * common_5
-                 + common_1 * (-sx * sin_psi_cos_theta_cos_phi + sy * sin_psi_cos_theta_sin_phi - (sz)*sin_psi_sin_theta)
-                 + (-sz * cos_theta + sx * sin_theta_cos_phi - sy * sin_theta_sin_phi) * common_4
-                 + (-(-sx * cos_psi_cos_theta_cos_phi) - sy * cos_psi_cos_theta_sin_phi + sz * cos_psi_sin_theta) * common_3
-                 + (-(tx * sin_psi_cos_theta_sin_phi) - ty * sin_theta_sin_phi) * common_2
-                 + (-(tx * cos_psi_cos_theta_sin_phi) + sin_theta_sin_phi) * (by + common_0))
-                * common_10)
-            / common_12
-            - ((2.0 * (-(tx * cos_psi_cos_theta_sin_phi) + sin_theta_sin_phi) * common_1
-                + 2.0 * (ty * cos_psi_cos_theta_sin_phi + sin_psi_cos_theta_sin_phi) * common_4
-                + 2.0 * (-(tx * sin_psi_cos_theta_sin_phi) - ty * sin_theta_sin_phi) * common_3)
-               * common_11)
-            / common_7;
-    }
-
-    constexpr auto dr_dphi() -> T
-    {
-        return ((common_5 * (cos_psi_sin_phi - ty * sin_psi_sin_phi + ty * cos_psi_sin_theta_cos_phi + sin_psi_sin_theta_cos_phi)
-                 + (sy * cos_theta_cos_phi + sx * cos_theta_sin_phi) * common_4
-                 + common_3 * (-sy * (-(sin_psi_sin_phi) + cos_psi_sin_theta_cos_phi) - sx * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi))
-                 + (ty * cos_theta_cos_phi - tx * cos_psi_sin_phi - tx * sin_psi_sin_theta_cos_phi) * common_2
-                 + common_1 * (-sy * (-(cos_psi_sin_phi)-sin_psi_sin_theta_cos_phi) - sx * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi))
-                 + (-(cos_theta_cos_phi) + tx * sin_psi_sin_phi - tx * cos_psi_sin_theta_cos_phi) * (by + common_0))
-                * common_10)
-            / common_12
-            - ((2.0 * (-(cos_theta_cos_phi) + tx * sin_psi_sin_phi - tx * cos_psi_sin_theta_cos_phi) * common_1
-                + 2.0 * (cos_psi_sin_phi - ty * sin_psi_sin_phi + ty * cos_psi_sin_theta_cos_phi + sin_psi_sin_theta_cos_phi) * common_4
-                + 2.0 * (ty * cos_theta_cos_phi - tx * cos_psi_sin_phi - tx * sin_psi_sin_theta_cos_phi) * common_3)
-               * common_11)
-            / common_7;
-    }
-
-    constexpr auto dr_dXa() -> T
-    {
-        return ((common_1 * (-(cos_psi_sin_phi)-sin_psi_sin_theta_cos_phi) - cos_theta_cos_phi * common_4
-                 + (-(sin_psi_sin_phi) + cos_psi_sin_theta_cos_phi) * common_3)
-                * common_10)
-            / common_12;
-    }
-
-    constexpr auto dr_dYa() -> T
-    {
-        return ((common_1 * (-(cos_psi_cos_phi) + sin_psi_sin_theta_sin_phi) + cos_theta_sin_phi * common_4
-                 + (-(sin_psi_cos_phi)-cos_psi_sin_theta_sin_phi) * common_3)
-                * common_10)
-            / common_12;
-    }
-
-    constexpr auto dr_dZa() -> T
-    {
-        return ((sin_psi_cos_theta * common_1 - sin_theta * common_4 - cos_psi_cos_theta * common_3) * common_10) / common_12;
-    }
-
-    constexpr auto dr_dbx() -> T { return (common_4 * common_10) / common_12; }
-
-    constexpr auto dr_dby() -> T { return (common_1 * common_10) / common_12; }
-
-    constexpr auto dr_dbz() -> T { return (common_3 * common_10) / common_12; }
-
-    constexpr auto dr_dtx() -> T
-    {
-        return (((cos_psi_cos_phi - sin_psi_sin_theta_sin_phi) * common_2
-                 + (-(sin_psi_cos_phi)-cos_psi_sin_theta_sin_phi) * (by + common_0))
-                * common_10)
-            / common_12
-            - ((2.0 * (-(sin_psi_cos_phi)-cos_psi_sin_theta_sin_phi) * common_1
-                + 2.0 * (cos_psi_cos_phi - sin_psi_sin_theta_sin_phi) * common_3)
-               * common_11)
-            / common_7;
-    }
-
-    constexpr auto dr_dty() -> T
-    {
-        return ((common_5 * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi) + cos_theta_sin_phi * common_2) * common_10) / common_12
-            - ((2.0 * (sin_psi_cos_phi + cos_psi_sin_theta_sin_phi) * common_4 + 2.0 * cos_theta_sin_phi * common_3) * common_11)
-            / common_7;
-    }
-#endif
+    // constexpr auto dr_dpsi() -> T
+    // {
+    //     return -0.5
+    //         * (common_0
+    //            * (2 * (-(ty * wm.R12) + tx * wm.R22) * (-(ty * wm.dr1_R12) + tx * wm.dr1_R22)
+    //               + 2 * (wm.R12 - tx * wm.R32) * (wm.dr1_R12 - tx * wm.dr1_R32)
+    //               + 2 * (-wm.R22 + ty * wm.R32) * (-wm.dr1_R22 + ty * wm.dr1_R32)))
+    //         / common_2
+    //         + (common_3
+    //            * ((-wm.R22 + ty * wm.R32) * (-(sx * wm.dr1_R11) - sy * wm.dr1_R12 - sz * wm.dr1_R13)
+    //               + (-az + bz - sx * wm.R31 - sy * wm.R32 - sz * wm.R33) * (-(ty * wm.dr1_R12) + tx * wm.dr1_R22)
+    //               + (wm.R12 - tx * wm.R32) * (-(sx * wm.dr1_R21) - sy * wm.dr1_R22 - sz * wm.dr1_R23)
+    //               + (-ay + by - sx * wm.R21 - sy * wm.R22 - sz * wm.R23) * (wm.dr1_R12 - tx * wm.dr1_R32)
+    //               + (-ax + bx - sx * wm.R11 - sy * wm.R12 - sz * wm.R13) * (-wm.dr1_R22 + ty * wm.dr1_R32)
+    //               + (-(ty * wm.R12) + tx * wm.R22) * (-(sx * wm.dr1_R31) - sy * wm.dr1_R32 - sz * wm.dr1_R33)))
+    //         / (common_1 * common_0);
+    // }
+    //
+    // constexpr auto dr_dtheta() -> T
+    // {
+    //     return -0.5
+    //         * (common_0
+    //            * (2 * (-(ty * wm.R12) + tx * wm.R22) * (-(ty * wm.dr2_R12) + tx * wm.dr2_R22)
+    //               + 2 * (wm.R12 - tx * wm.R32) * (wm.dr2_R12 - tx * wm.dr2_R32)
+    //               + 2 * (-wm.R22 + ty * wm.R32) * (-wm.dr2_R22 + ty * wm.dr2_R32)))
+    //         / common_2
+    //         + (common_3
+    //            * ((-wm.R22 + ty * wm.R32) * (-(sx * wm.dr2_R11) - sy * wm.dr2_R12 - sz * wm.dr2_R13)
+    //               + (-az + bz - sx * wm.R31 - sy * wm.R32 - sz * wm.R33) * (-(ty * wm.dr2_R12) + tx * wm.dr2_R22)
+    //               + (wm.R12 - tx * wm.R32) * (-(sx * wm.dr2_R21) - sy * wm.dr2_R22 - sz * wm.dr2_R23)
+    //               + (-ay + by - sx * wm.R21 - sy * wm.R22 - sz * wm.R23) * (wm.dr2_R12 - tx * wm.dr2_R32)
+    //               + (-ax + bx - sx * wm.R11 - sy * wm.R12 - sz * wm.R13) * (-wm.dr2_R22 + ty * wm.dr2_R32)
+    //               + (-(ty * wm.R12) + tx * wm.R22) * (-(sx * wm.dr2_R31) - sy * wm.dr2_R32 - sz * wm.dr2_R33)))
+    //         / (common_1 * common_0);
+    // }
+    //
+    // constexpr auto dr_dphi() -> T
+    // {
+    //     return -0.5
+    //         * (common_0
+    //            * (2 * (-(ty * wm.R12) + tx * wm.R22) * (-(ty * wm.dr3_R12) + tx * wm.dr3_R22)
+    //               + 2 * (wm.R12 - tx * wm.R32) * (wm.dr3_R12 - tx * wm.dr3_R32)
+    //               + 2 * (-wm.R22 + ty * wm.R32) * (-wm.dr3_R22 + ty * wm.dr3_R32)))
+    //         / common_2
+    //         + (common_3
+    //            * ((-wm.R22 + ty * wm.R32) * (-(sx * wm.dr3_R11) - sy * wm.dr3_R12 - sz * wm.dr3_R13)
+    //               + (-az + bz - sx * wm.R31 - sy * wm.R32 - sz * wm.R33) * (-(ty * wm.dr3_R12) + tx * wm.dr3_R22)
+    //               + (wm.R12 - tx * wm.R32) * (-(sx * wm.dr3_R21) - sy * wm.dr3_R22 - sz * wm.dr3_R23)
+    //               + (-ay + by - sx * wm.R21 - sy * wm.R22 - sz * wm.R23) * (wm.dr3_R12 - tx * wm.dr3_R32)
+    //               + (-ax + bx - sx * wm.R11 - sy * wm.R12 - sz * wm.R13) * (-wm.dr3_R22 + ty * wm.dr3_R32)
+    //               + (-(ty * wm.R12) + tx * wm.R22) * (-(sx * wm.dr3_R31) - sy * wm.dr3_R32 - sz * wm.dr3_R33)))
+    //         / (common_1 * common_0);
+    // }
+    //
+    // constexpr auto dr_dax() -> T { return ((wm.R22 - ty * wm.R32) * common_3) / (common_1 * common_0); }
+    //
+    // constexpr auto dr_day() -> T { return ((-wm.R12 + tx * wm.R32) * common_3) / (common_1 * common_0); }
+    //
+    // constexpr auto dr_daz() -> T { return ((ty * wm.R12 - tx * wm.R22) * common_3) / (common_1 * common_0); }
+    //
+    // constexpr auto dr_dbx() -> T { return ((-wm.R22 + ty * wm.R32) * common_3) / (common_1 * common_0); }
+    //
+    // constexpr auto dr_dby() -> T { return ((wm.R12 - tx * wm.R32) * common_3) / (common_1 * common_0); }
+    //
+    // constexpr auto dr_dbz() -> T { return ((-(ty * wm.R12) + tx * wm.R22) * common_3) / (common_1 * common_0); }
+    //
+    // constexpr auto dr_dtx() -> T
+    // {
+    //     return ((-((-ay + by - sx * wm.R21 - sy * wm.R22 - sz * wm.R23) * wm.R32)
+    //              + wm.R22 * (-az + bz - sx * wm.R31 - sy * wm.R32 - sz * wm.R33))
+    //             * common_3)
+    //         / (common_1 * common_0)
+    //         - ((2 * wm.R22 * (-(ty * wm.R12) + tx * wm.R22) - 2 * wm.R32 * (wm.R12 - tx * wm.R32)) * common_0) / (2 * common_2);
+    // }
+    //
+    // constexpr auto dr_dty() -> T
+    // {
+    //     return (((-ax + bx - sx * wm.R11 - sy * wm.R12 - sz * wm.R13) * wm.R32
+    //              - wm.R12 * (-az + bz - sx * wm.R31 - sy * wm.R32 - sz * wm.R33))
+    //             * common_3)
+    //         / (common_1 * common_0)
+    //         - ((-2 * wm.R12 * (-(ty * wm.R12) + tx * wm.R22) + 2 * wm.R32 * (-wm.R22 + ty * wm.R32)) * common_0) / (2 * common_2);
+    // }
 };
 
 enum class Kind
@@ -634,51 +407,100 @@ struct parameter
     T value;
     Kind kind;
 
-    explicit operator bool() const { return kind == Kind::FREE; }
+    auto is_free() const -> bool { return kind == Kind::FREE; }
     operator T() const { return value; }
-
-    auto operator<<(std::ofstream& ofs) { ofs << value << ' ' << (kind == Kind::FREE ? '~' : ' '); }
 };
+
+template<typename T>
+auto operator<<(std::ostream& ofs, const SA::parameter<T>& rhs) -> std::ostream&
+{
+    return ofs << std::setw(2) << (rhs.kind == SA::Kind::FREE ? '~' : 'x') << std::setw(12) << rhs.value;
+}
 
 template<typename T>
 struct global_parameters
 {
-    global_parameters(parameter<T> Xa, parameter<T> Ya, parameter<T> Za, parameter<T> psi, parameter<T> theta, parameter<T> phi)
-        : Xa(Xa)
-        , Ya(Ya)
-        , Za(Za)
-        , psi(psi)
-        , theta(theta)
-        , phi(phi)
+    global_parameters(parameter<T> gx, parameter<T> gy, parameter<T> gz, parameter<T> ga, parameter<T> gb, parameter<T> gc)
     {
-        wire_rotation = geom::make_rotation_matrix<T>(psi, theta, phi) * geom::make_vector<T>(0, 1, 0);
+        params.reserve(6);
+        params.push_back(gx);
+        params.push_back(gy);
+        params.push_back(gz);
+        params.push_back(ga);
+        params.push_back(gb);
+        params.push_back(gc);
     }
 
-    parameter<T> Xa;
-    parameter<T> Ya;
-    parameter<T> Za;
+    std::vector<parameter<T>> params;
 
-    parameter<T> psi;
-    parameter<T> theta;
-    parameter<T> phi;
+    auto gx() -> parameter<T>& { return params[0]; }
+    auto gy() -> parameter<T>& { return params[1]; }
+    auto gz() -> parameter<T>& { return params[2]; }
+    auto ga() -> parameter<T>& { return params[3]; }
+    auto gb() -> parameter<T>& { return params[4]; }
+    auto gc() -> parameter<T>& { return params[5]; }
 
-    XYZVector wire_rotation;
+    auto gx() const -> const parameter<T>& { return params[0]; }
+    auto gy() const -> const parameter<T>& { return params[1]; }
+    auto gz() const -> const parameter<T>& { return params[2]; }
+    auto ga() const -> const parameter<T>& { return params[3]; }
+    auto gb() const -> const parameter<T>& { return params[4]; }
+    auto gc() const -> const parameter<T>& { return params[5]; }
+
+    auto dump_pede_param(int layer, std::ostream& ofs)
+    {
+        for (int i = 0; i < 6; ++i) {
+            const auto& p = params[i];
+            if (p.is_free()) {
+                ofs << std::setw(10) << layer * 10 + i + 1 << std::setw(20) << p.value << std::setw(10) << 0.0 << '\n';
+            }
+        }
+    }
 };
 
+template<template<class> class R>
 class MilleBuilder
 {
   public:
-    MilleBuilder(const char* outFileName, bool asBinary = true, bool writeZero = false)
-        : mille(outFileName, asBinary, writeZero)
+    MilleBuilder(const char* prefix, const char* outFileName, bool asBinary = true, bool writeZero = false)
+        : prefix(prefix)
+        , mille(outFileName, asBinary, writeZero)
     {
     }
     ~MilleBuilder() {};
 
-    auto add_planes_globals(
-        parameter<float> Xa, parameter<float> Ya, parameter<float> Za, parameter<float> psi, parameter<float> theta, parameter<float> phi)
+    /**
+     * Add tracking planes alignment definitions. Alignment is defined as fixed rotational and transformational elements, and rotational and
+     * transformational corrections.
+     *
+     * @param gx transformational global correction for x
+     * @param gy transformational global correction for y
+     * @param gz transformational global correction for z
+     * @param ga rotational global correction d_alpha
+     * @param gb rotational global correction d_beta
+     * @param gc rotational global correction d_alpha
+     * @param ax alignment x-component
+     * @param ay alignment y-component
+     * @param az alignment y-component
+     * @param alpha rotationa 1st angle
+     * @param beta rotationa 2nd angle
+     * @param gamma rotationa 3rd angle
+     */
+    auto add_planes_globals(parameter<float> gx,
+                            parameter<float> gy,
+                            parameter<float> gz,
+                            parameter<float> ga,
+                            parameter<float> gb,
+                            parameter<float> gc,
+                            float ax,
+                            float ay,
+                            float az,
+                            float alpha,
+                            float beta,
+                            float gamma)
     {
-        global_parameters<float> gp = {Xa, Ya, Za, psi, theta, phi};
-        layers_global_pars.push_back(std::move(gp));
+        layers_global_pars.emplace_back(gx, gy, gz, ga, gb, gc);
+        layers_derivatives.emplace_back(gx.value, gy.value, gz.value, ga.value, gb.value, gc.value, ax, ay, az, alpha, beta, gamma);
     }
 
     /**
@@ -690,82 +512,89 @@ class MilleBuilder
      * @param bz base vector z-coordinate
      * @param tx direction vector x-component
      * @param ty direction vector y-component
-     * @param U wire position x
-     * @param V wire position y
-     * @param Z wire position z
+     * @param sx wire position x
+     * @param sy wire position y
+     * @param sz wire position z
      */
-    auto add_local(int layer, float bx, float by, float bz, float tx, float ty, float U, float V, float Z, float dr, float sigma)
+    auto add_local(int layer, float bx, float by, float bz, float tx, float ty, float sx, float sy, float sz, float dr, float sigma)
     {
         assert(layer < layers_global_pars.size());
 
         const auto param_idx_offset = layer * 10;
-        const auto& current_layer_pars = layers_global_pars[layer];
+        const auto& current_layer = layers_global_pars[layer];
 
-        auto derivs = derivatives<float>(current_layer_pars.psi.value,
-                                         current_layer_pars.theta.value,
-                                         current_layer_pars.phi.value,
-                                         U,
-                                         V,
-                                         Z,
-                                         current_layer_pars.Xa.value,
-                                         current_layer_pars.Ya.value,
-                                         current_layer_pars.Za.value,
-                                         bx,
-                                         by,
-                                         bz,
-                                         tx,
-                                         ty);
+        auto& derivs = layers_derivatives[layer];
+        derivs.update(sx, sy, sz, bx, by, bz, tx, ty);
 
-        std::vector<float> local_derivatives;
-        local_derivatives.reserve(5);
+        std::array<float, 5> local_derivatives;
 
-        local_derivatives.push_back(derivs.dr_dbx());
-        local_derivatives.push_back(derivs.dr_dby());
-        local_derivatives.push_back(derivs.dr_dbz());
-        local_derivatives.push_back(derivs.dr_dtx());
-        local_derivatives.push_back(derivs.dr_dty());
+        local_derivatives[0] = derivs.dr_dbx();
+        local_derivatives[1] = derivs.dr_dby();
+        local_derivatives[2] = derivs.dr_dbz();
+        local_derivatives[3] = derivs.dr_dtx();
+        local_derivatives[4] = derivs.dr_dty();
 
-        std::vector<float> global_derivatives;
-        global_derivatives.reserve(6);
-        std::vector<int> global_deriv_index;
-        global_deriv_index.reserve(6);
+        std::array<float, 6> global_derivatives;
+        std::array<int, 6> global_deriv_index;
+        int global_cnt = 0;
 
-        if (current_layer_pars.Xa) {
-            global_derivatives.push_back(derivs.dr_dXa());
-            global_deriv_index.push_back(param_idx_offset + 1);
+        if (current_layer.gx().is_free()) {
+            global_derivatives[global_cnt] = derivs.dr_dgx();
+            global_deriv_index[global_cnt] = param_idx_offset + 1;
+            global_cnt++;
         }
 
-        if (current_layer_pars.Ya) {
-            global_derivatives.push_back(derivs.dr_dYa());
-            global_deriv_index.push_back(param_idx_offset + 2);
+        if (current_layer.gy().is_free()) {
+            global_derivatives[global_cnt] = derivs.dr_dgy();
+            global_deriv_index[global_cnt] = param_idx_offset + 2;
+            global_cnt++;
         }
 
-        if (current_layer_pars.Za) {
-            global_derivatives.push_back(derivs.dr_dZa());
-            global_deriv_index.push_back(param_idx_offset + 3);
+        if (current_layer.gz().is_free()) {
+            global_derivatives[global_cnt] = derivs.dr_dgz();
+            global_deriv_index[global_cnt] = param_idx_offset + 3;
+            global_cnt++;
         }
 
-        if (current_layer_pars.phi) {
-            global_derivatives.push_back(derivs.dr_dphi());
-            global_deriv_index.push_back(param_idx_offset + 4);
+        if (current_layer.ga().is_free()) {
+            global_derivatives[global_cnt] = derivs.dr_dga();
+            global_deriv_index[global_cnt] = param_idx_offset + 4;
+            global_cnt++;
         }
 
-        if (current_layer_pars.theta) {
-            global_derivatives.push_back(derivs.dr_dtheta());
-            global_deriv_index.push_back(param_idx_offset + 5);
+        if (current_layer.gb().is_free()) {
+            global_derivatives[global_cnt] = derivs.dr_dgb();
+            global_deriv_index[global_cnt] = param_idx_offset + 5;
+            global_cnt++;
         }
 
-        if (current_layer_pars.psi) {
-            global_derivatives.push_back(derivs.dr_dpsi());
-            global_deriv_index.push_back(param_idx_offset + 6);
+        if (current_layer.gc().is_free()) {
+            global_derivatives[global_cnt] = derivs.dr_dgc();
+            global_deriv_index[global_cnt] = param_idx_offset + 6;
+            global_cnt++;
         }
 
-        auto res = geom::distance({bx, by, bz},
-                                  {tx, ty, 1.0},
-                                  {U + current_layer_pars.Xa, V + current_layer_pars.Ya, Z + current_layer_pars.Za},
-                                  current_layer_pars.wire_rotation)
-            - dr;
+        auto alignment_rotation = euler::make_rotation_matrix(derivs.wm);
+        auto sloc = XYZVector(sx, sy, sz);
+        auto alignment_translation = XYZVector(derivs.ax, derivs.ay, derivs.az);
+        auto alignment_translation_correction = XYZVector(current_layer.gx(), current_layer.gy(), current_layer.gz());
+        auto alignment_rotation_correction = Rotation3D(1,
+                                                        -current_layer.gc(),
+                                                        current_layer.gb(),
+                                                        current_layer.gc(),
+                                                        1,
+                                                        current_layer.ga(),
+                                                        -current_layer.gb(),
+                                                        current_layer.ga(),
+                                                        1);
+        auto slab = alignment_rotation_correction * alignment_rotation * sloc + alignment_translation + alignment_translation_correction;
+        auto srot = alignment_rotation_correction * alignment_rotation * ROOT::Math::XYZVector(0, 1, 0);
+        auto res = abs(geom::distance({bx, by, bz}, {tx, ty, 1.0}, {slab.x(), slab.y(), slab.z()}, srot) - dr);
 
+        if (verbose > 1) {
+            std::cout << "Rotation: " << alignment_rotation;
+            std::cout << "% sloc=" << sloc << "   slab=" << slab << '\n';
+        }
         if (verbose) {
             static const auto value_width = 12;
             std::cout << "+ " << std::setw(3) << layer << "   res=" << std::setw(value_width) << res
@@ -779,13 +608,7 @@ class MilleBuilder
             std::cout << '\n';
         }
 
-        mille.mille(local_derivatives.size(),
-                    local_derivatives.data(),
-                    global_derivatives.size(),
-                    global_derivatives.data(),
-                    global_deriv_index.data(),
-                    res,
-                    sigma);
+        mille.mille(5, local_derivatives.data(), global_cnt, global_derivatives.data(), global_deriv_index.data(), res, sigma);
     }
 
     /* Call Mille::end()
@@ -808,6 +631,19 @@ class MilleBuilder
         mille.kill();
     }
 
+    auto write_param_file()
+    {
+        std::ofstream param_file(prefix + std::string("params.txt"));
+        if (!param_file)
+            return;
+
+        param_file << "Parameter\n";
+        auto max_globals = layers_global_pars.size();
+        for (decltype(max_globals) i = 0; i < max_globals; ++i) {
+            // if (layers_global_pars[i].is_free())  {}
+            layers_global_pars[i].dump_pede_param(i, param_file);
+        }
+    }
     /**
      * Read straw plane (global paremeters from file.
      *
@@ -840,12 +676,18 @@ class MilleBuilder
                 if (infile.eof())
                     break;
 
-                add_planes_globals({x, to_kind(bx)},
-                                   {y, to_kind(by)},
-                                   {z, to_kind(bz)},
-                                   {psi * TMath::DegToRad(), to_kind(bpsi)},
-                                   {theta * TMath::DegToRad(), to_kind(btheta)},
-                                   {phi * TMath::DegToRad(), to_kind(bpsi)});
+                add_planes_globals({0, to_kind(bx)},
+                                   {0, to_kind(by)},
+                                   {0, to_kind(bz)},
+                                   {0, to_kind(bpsi)},
+                                   {0, to_kind(btheta)},
+                                   {0, to_kind(bpsi)},
+                                   x,
+                                   y,
+                                   z,
+                                   bpsi * TMath::DegToRad(),
+                                   btheta * TMath::DegToRad(),
+                                   bphi * TMath::DegToRad());
             }
         } else if (config_word == "MATRIX") {
             double x, y, z, r11, r12, r13, r21, r22, r23, r31, r32, r33;
@@ -859,12 +701,18 @@ class MilleBuilder
                 auto r = geom::make_rotation_matrix(r11, r12, r13, r21, r22, r23, r31, r32, r33);
                 RotationZYX ra(r);
 
-                add_planes_globals({x, to_kind(bx)},
-                                   {y, to_kind(by)},
-                                   {z, to_kind(bz)},
-                                   {ra.Psi(), to_kind(bpsi)},
-                                   {ra.Theta(), to_kind(btheta)},
-                                   {ra.Phi(), to_kind(bpsi)});
+                add_planes_globals({0, to_kind(bx)},
+                                   {0, to_kind(by)},
+                                   {0, to_kind(bz)},
+                                   {0, to_kind(bpsi)},
+                                   {0, to_kind(btheta)},
+                                   {0, to_kind(bpsi)},
+                                   x,
+                                   y,
+                                   z,
+                                   ra.Psi(),
+                                   ra.Theta(),
+                                   ra.Phi());
             }
         } else {
             abort();
@@ -878,27 +726,27 @@ class MilleBuilder
         constexpr auto width = 14;
         auto bar = std::string(width * 7, '=');
         std::cout << bar << '\n';
-        std::cout << std::left << std::setw(width) << "Layer" << std::setw(width) << "X" << std::setw(width) << "Y" << std::setw(width)
-                  << "Z" << std::setw(width) << "Psi" << std::setw(width) << "Theta" << std::setw(width) << "Phi" << '\n';
+        std::cout << std::left << std::setw(width) << "Layer" << std::setw(width) << "Gx" << std::setw(width) << "Gy" << std::setw(width)
+                  << "GzZ" << std::setw(width) << "Ga" << std::setw(width) << "Gb" << std::setw(width) << "Gc" << '\n';
         std::cout << bar << '\n';
 
         auto i = 1;
         for (const auto& gl : layers_global_pars) {
-            std::cout << std::setw(width) << i++ << std::setw(width) << gl.Xa << std::setw(width) << gl.Ya << std::setw(width) << gl.Za
-                      << std::setw(width) << gl.psi * rad_deg << std::setw(width) << gl.theta * rad_deg << std::setw(width)
-                      << gl.phi * rad_deg << '\n';
+            std::cout << std::setw(width) << i++ << gl.gx() << gl.gy() << gl.gz() << gl.ga() << gl.gb() << gl.gc() << '\n';
         }
 
         std::cout << bar << '\n';
         std::cout << std::right;
     }
 
-    auto set_verbose(bool make_verbose) { verbose = make_verbose; }
+    auto set_verbose(int make_verbose) { verbose = make_verbose; }
 
   private:
+    std::string prefix;
     std::vector<global_parameters<float>> layers_global_pars;
+    std::vector<derivatives<float, R>> layers_derivatives;
     Mille mille;
-    bool verbose {false};
+    int verbose {0};
 };
 
 }  // namespace SA
