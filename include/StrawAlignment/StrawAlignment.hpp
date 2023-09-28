@@ -105,6 +105,12 @@ struct derivatives
     T common_2;
     T common_3;
     T common_4;
+    T common_5;
+    T common_10;
+    T common_11;
+    T common_20;
+    T common_21;
+    T common_22;
 
     SA::euler::euler_base<T> wm;
 
@@ -140,35 +146,23 @@ struct derivatives
 
         // Manually optimized shortcuts for frequently appearing expressions.
         // Touch it on your own risk.
-        /*
-                common_0 = abs((-ay + by - sx * wm.R21 - sy * wm.R22 - sz * wm.R23) * (wm.R12 - tx * wm.R32)
-                               + (-ax + bx - sx * wm.R11 - sy * wm.R12 - sz * wm.R13) * (-wm.R22 + ty * wm.R32)
-                               + (-(ty * wm.R12) + tx * wm.R22) * (-az + bz - sx * wm.R31 - sy * wm.R32 - sz * wm.R33));
-                common_1 = sqrt(pow(-(ty * wm.R12) + tx * wm.R22, 2) + pow(wm.R12 - tx * wm.R32, 2) + pow(-wm.R22 + ty * wm.R32, 2));
-                common_2 = pow(pow(-(ty * wm.R12) + tx * wm.R22, 2) + pow(wm.R12 - tx * wm.R32, 2) + pow(-wm.R22 + ty * wm.R32, 2), 3.0
-           / 2.0); common_3 = ((-ay + by - sx * wm.R21 - sy * wm.R22 - sz * wm.R23) * (wm.R12 - tx * wm.R32)
-                            + (-ax + bx - sx * wm.R11 - sy * wm.R12 - sz * wm.R13) * (-wm.R22 + ty * wm.R32)
-                            + (-(ty * wm.R12) + tx * wm.R22) * (-az + bz - sx * wm.R31 - sy * wm.R32 - sz * wm.R33));*/
+        common_0 = wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32;
+        common_1 = gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32;
+        common_2 = -(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32;
+        common_3 = -2 * ay + by - sx * (-(gc * wm.R11) + wm.R21 + ga * wm.R31) - sy * (-(gc * wm.R12) + wm.R22 + ga * wm.R32)
+            - sz * (-(gc * wm.R13) + wm.R23 + ga * wm.R33);
+        common_4 = -2 * ax + bx - sx * (wm.R11 - gc * wm.R21 + gb * wm.R31) - sy * (wm.R12 - gc * wm.R22 + gb * wm.R32)
+            - sz * (wm.R13 - gc * wm.R23 + gb * wm.R33);
+        common_5 = -2 * az + bz - sx * (gb * wm.R11 - ga * wm.R21 + wm.R31) - sy * (gb * wm.R12 - ga * wm.R22 + wm.R32)
+            - sz * (gb * wm.R13 - ga * wm.R23 + wm.R33);
 
-        common_0 = pow(wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32, 2)
-            + pow(gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32, 2)
-            + pow(-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32, 2);
-        common_1 = pow(common_0, 3. / 2.);
-        common_2 = ((-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32)
-                        * (-2 * az + bz - sx * (gb * wm.R11 - ga * wm.R21 + wm.R31) - sy * (gb * wm.R12 - ga * wm.R22 + wm.R32)
-                           - sz * (gb * wm.R13 - ga * wm.R23 + wm.R33))
-                    + (wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32)
-                        * (-2 * ay + by - sx * (-(gc * wm.R11) + wm.R21 + ga * wm.R31) - sy * (-(gc * wm.R12) + wm.R22 + ga * wm.R32)
-                           - sz * (-(gc * wm.R13) + wm.R23 + ga * wm.R33))
-                    + (gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32)
-                        * (-2 * ax + bx - sx * (wm.R11 - gc * wm.R21 + gb * wm.R31) - sy * (wm.R12 - gc * wm.R22 + gb * wm.R32)
-                           - sz * (wm.R13 - gc * wm.R23 + gb * wm.R33)));
-        common_3 = fabs(common_2);
-        common_4 = sqrt(common_0);
+        common_10 = pow(common_0, 2) + pow(common_1, 2) + pow(common_2, 2);
+        common_11 = common_0 * common_3 + common_1 * common_4 + common_2 * common_5;
+
+        common_20 = sqrt(common_10);
+        common_21 = pow(common_10, 3. / 2.);
+        common_22 = fabs(common_11);
     }
-
-    // Manually optimized shortcuts for frequently appearing expressions.
-    // Touch it on your own risk.
 
     constexpr auto dr_dgx() -> T { return 0; }
 
@@ -178,216 +172,52 @@ struct derivatives
 
     constexpr auto dr_dga() -> T
     {
-        return (((sx * wm.R21 + sy * wm.R22 + sz * wm.R23)
-                     * (-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32)
-                 + (wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32)
-                     * (-(sx * wm.R31) - sy * wm.R32 - sz * wm.R33)
-                 + tx * wm.R32
-                     * (-2 * az + bz - sx * (gb * wm.R11 - ga * wm.R21 + wm.R31) - sy * (gb * wm.R12 - ga * wm.R22 + wm.R32)
-                        - sz * (gb * wm.R13 - ga * wm.R23 + wm.R33))
-                 + tx * wm.R22
-                     * (-2 * ay + by - sx * (-(gc * wm.R11) + wm.R21 + ga * wm.R31) - sy * (-(gc * wm.R12) + wm.R22 + ga * wm.R32)
-                        - sz * (-(gc * wm.R13) + wm.R23 + ga * wm.R33))
-                 + (-(ty * wm.R22) - wm.R32)
-                     * (-2 * ax + bx - sx * (wm.R11 - gc * wm.R21 + gb * wm.R31) - sy * (wm.R12 - gc * wm.R22 + gb * wm.R32)
-                        - sz * (wm.R13 - gc * wm.R23 + gb * wm.R33)))
-                * common_2)
-            / (common_4 * common_3)
-            - ((2 * tx * wm.R22 * (wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32)
-                + 2 * (-(ty * wm.R22) - wm.R32) * (gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32)
-                + 2 * tx * wm.R32
-                    * (-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32))
-               * common_3)
-            / (2 * common_1);
+        return (((sx * wm.R21 + sy * wm.R22 + sz * wm.R23) * common_2 + common_0 * (-(sx * wm.R31) - sy * wm.R32 - sz * wm.R33)
+                 + tx * wm.R32 * common_5 + tx * wm.R22 * common_3 + (-(ty * wm.R22) - wm.R32) * common_4)
+                * common_11)
+            / (common_20 * common_22)
+            - ((tx * wm.R22 * common_0 + (-(ty * wm.R22) - wm.R32) * common_1 + tx * wm.R32 * common_2) * common_22) / common_21;
     }
 
     constexpr auto dr_dgb() -> T
     {
-        return (((-(sx * wm.R11) - sy * wm.R12 - sz * wm.R13)
-                     * (-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32)
-                 + (gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32)
-                     * (-(sx * wm.R31) - sy * wm.R32 - sz * wm.R33)
-                 - ty * wm.R32
-                     * (-2 * az + bz - sx * (gb * wm.R11 - ga * wm.R21 + wm.R31) - sy * (gb * wm.R12 - ga * wm.R22 + wm.R32)
-                        - sz * (gb * wm.R13 - ga * wm.R23 + wm.R33))
-                 + (-(tx * wm.R12) + wm.R32)
-                     * (-2 * ay + by - sx * (-(gc * wm.R11) + wm.R21 + ga * wm.R31) - sy * (-(gc * wm.R12) + wm.R22 + ga * wm.R32)
-                        - sz * (-(gc * wm.R13) + wm.R23 + ga * wm.R33))
-                 + ty * wm.R12
-                     * (-2 * ax + bx - sx * (wm.R11 - gc * wm.R21 + gb * wm.R31) - sy * (wm.R12 - gc * wm.R22 + gb * wm.R32)
-                        - sz * (wm.R13 - gc * wm.R23 + gb * wm.R33)))
-                * common_2)
-            / (common_4 * common_3)
-            - ((2 * (-(tx * wm.R12) + wm.R32) * (wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32)
-                + 2 * ty * wm.R12 * (gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32)
-                - 2 * ty * wm.R32
-                    * (-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32))
-               * common_3)
-            / (2 * common_1);
+        return (((-(sx * wm.R11) - sy * wm.R12 - sz * wm.R13) * common_2 + common_1 * (-(sx * wm.R31) - sy * wm.R32 - sz * wm.R33)
+                 - ty * wm.R32 * common_5 + (-(tx * wm.R12) + wm.R32) * common_3 + ty * wm.R12 * common_4)
+                * common_11)
+            / (common_20 * common_22)
+            - (((-(tx * wm.R12) + wm.R32) * common_0 + ty * wm.R12 * common_1 - ty * wm.R32 * common_2) * common_22) / common_21;
     }
 
     constexpr auto dr_dgc() -> T
     {
-        return (((sx * wm.R11 + sy * wm.R12 + sz * wm.R13)
-                     * (wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32)
-                 + (sx * wm.R21 + sy * wm.R22 + sz * wm.R23)
-                     * (gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32)
-                 + (-(tx * wm.R12) + ty * wm.R22)
-                     * (-2 * az + bz - sx * (gb * wm.R11 - ga * wm.R21 + wm.R31) - sy * (gb * wm.R12 - ga * wm.R22 + wm.R32)
-                        - sz * (gb * wm.R13 - ga * wm.R23 + wm.R33))
-                 - wm.R22
-                     * (-2 * ay + by - sx * (-(gc * wm.R11) + wm.R21 + ga * wm.R31) - sy * (-(gc * wm.R12) + wm.R22 + ga * wm.R32)
-                        - sz * (-(gc * wm.R13) + wm.R23 + ga * wm.R33))
-                 + wm.R12
-                     * (-2 * ax + bx - sx * (wm.R11 - gc * wm.R21 + gb * wm.R31) - sy * (wm.R12 - gc * wm.R22 + gb * wm.R32)
-                        - sz * (wm.R13 - gc * wm.R23 + gb * wm.R33)))
-                * common_2)
-            / (common_4 * common_3)
-            - ((-2 * wm.R22 * (wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32)
-                + 2 * wm.R12 * (gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32)
-                + 2 * (-(tx * wm.R12) + ty * wm.R22)
-                    * (-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32))
-               * common_3)
-            / (2 * common_1);
+        return (((sx * wm.R11 + sy * wm.R12 + sz * wm.R13) * common_0 + (sx * wm.R21 + sy * wm.R22 + sz * wm.R23) * common_1
+                 + (-(tx * wm.R12) + ty * wm.R22) * common_5 - wm.R22 * common_3 + wm.R12 * common_4)
+                * common_11)
+            / (common_20 * common_22)
+            - ((-wm.R22 * common_0 + wm.R12 * common_1 + (-(tx * wm.R12) + ty * wm.R22) * common_2) * common_22) / common_21;
     }
 
-    constexpr auto dr_dbx() -> T
-    {
-        return ((gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32) * common_2)
-            / (common_4 * common_3);
-    }
+    constexpr auto dr_dbx() -> T { return (common_1 * common_11) / (common_20 * common_22); }
 
-    constexpr auto dr_dby() -> T
-    {
-        return ((wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32) * common_2)
-            / (common_4 * common_3);
-    }
+    constexpr auto dr_dby() -> T { return (common_0 * common_11) / (common_20 * common_22); }
 
-    constexpr auto dr_dbz() -> T
-    {
-        return ((-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32) * common_2)
-            / (common_4 * common_3);
-    }
+    constexpr auto dr_dbz() -> T { return (common_2 * common_11) / (common_20 * common_22); }
 
     constexpr auto dr_dtx() -> T
     {
-        return (((-(gc * wm.R12) + wm.R22 + ga * wm.R32)
-                     * (-2 * az + bz - sx * (gb * wm.R11 - ga * wm.R21 + wm.R31) - sy * (gb * wm.R12 - ga * wm.R22 + wm.R32)
-                        - sz * (gb * wm.R13 - ga * wm.R23 + wm.R33))
-                 + (-(gb * wm.R12) + ga * wm.R22 - wm.R32)
-                     * (-2 * ay + by - sx * (-(gc * wm.R11) + wm.R21 + ga * wm.R31) - sy * (-(gc * wm.R12) + wm.R22 + ga * wm.R32)
-                        - sz * (-(gc * wm.R13) + wm.R23 + ga * wm.R33)))
-                * common_2)
-            / (common_4 * common_3)
-            - ((2 * (-(gb * wm.R12) + ga * wm.R22 - wm.R32)
-                    * (wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32)
-                + 2 * (-(gc * wm.R12) + wm.R22 + ga * wm.R32)
-                    * (-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32))
-               * common_3)
-            / (2 * common_1);
+        return (((-(gc * wm.R12) + wm.R22 + ga * wm.R32) * common_5 + (-(gb * wm.R12) + ga * wm.R22 - wm.R32) * common_3) * common_11)
+            / (common_20 * common_22)
+            - (((-(gb * wm.R12) + ga * wm.R22 - wm.R32) * common_0 + (-(gc * wm.R12) + wm.R22 + ga * wm.R32) * common_2) * common_22)
+            / common_21;
     }
 
     constexpr auto dr_dty() -> T
     {
-        return (((-wm.R12 + gc * wm.R22 - gb * wm.R32)
-                     * (-2 * az + bz - sx * (gb * wm.R11 - ga * wm.R21 + wm.R31) - sy * (gb * wm.R12 - ga * wm.R22 + wm.R32)
-                        - sz * (gb * wm.R13 - ga * wm.R23 + wm.R33))
-                 + (gb * wm.R12 - ga * wm.R22 + wm.R32)
-                     * (-2 * ax + bx - sx * (wm.R11 - gc * wm.R21 + gb * wm.R31) - sy * (wm.R12 - gc * wm.R22 + gb * wm.R32)
-                        - sz * (wm.R13 - gc * wm.R23 + gb * wm.R33)))
-                * common_2)
-            / (common_4 * common_3)
-            - ((2 * (gb * wm.R12 - ga * wm.R22 + wm.R32)
-                    * (gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32)
-                + 2 * (-wm.R12 + gc * wm.R22 - gb * wm.R32)
-                    * (-(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32))
-               * common_3)
-            / (2 * common_1);
+        return (((-wm.R12 + gc * wm.R22 - gb * wm.R32) * common_5 + (gb * wm.R12 - ga * wm.R22 + wm.R32) * common_4) * common_11)
+            / (common_20 * common_22)
+            - (((gb * wm.R12 - ga * wm.R22 + wm.R32) * common_1 + (-wm.R12 + gc * wm.R22 - gb * wm.R32) * common_2) * common_22)
+            / common_21;
     }
-
-    // constexpr auto dr_dpsi() -> T
-    // {
-    //     return -0.5
-    //         * (common_0
-    //            * (2 * (-(ty * wm.R12) + tx * wm.R22) * (-(ty * wm.dr1_R12) + tx * wm.dr1_R22)
-    //               + 2 * (wm.R12 - tx * wm.R32) * (wm.dr1_R12 - tx * wm.dr1_R32)
-    //               + 2 * (-wm.R22 + ty * wm.R32) * (-wm.dr1_R22 + ty * wm.dr1_R32)))
-    //         / common_2
-    //         + (common_3
-    //            * ((-wm.R22 + ty * wm.R32) * (-(sx * wm.dr1_R11) - sy * wm.dr1_R12 - sz * wm.dr1_R13)
-    //               + (-az + bz - sx * wm.R31 - sy * wm.R32 - sz * wm.R33) * (-(ty * wm.dr1_R12) + tx * wm.dr1_R22)
-    //               + (wm.R12 - tx * wm.R32) * (-(sx * wm.dr1_R21) - sy * wm.dr1_R22 - sz * wm.dr1_R23)
-    //               + (-ay + by - sx * wm.R21 - sy * wm.R22 - sz * wm.R23) * (wm.dr1_R12 - tx * wm.dr1_R32)
-    //               + (-ax + bx - sx * wm.R11 - sy * wm.R12 - sz * wm.R13) * (-wm.dr1_R22 + ty * wm.dr1_R32)
-    //               + (-(ty * wm.R12) + tx * wm.R22) * (-(sx * wm.dr1_R31) - sy * wm.dr1_R32 - sz * wm.dr1_R33)))
-    //         / (common_1 * common_0);
-    // }
-    //
-    // constexpr auto dr_dtheta() -> T
-    // {
-    //     return -0.5
-    //         * (common_0
-    //            * (2 * (-(ty * wm.R12) + tx * wm.R22) * (-(ty * wm.dr2_R12) + tx * wm.dr2_R22)
-    //               + 2 * (wm.R12 - tx * wm.R32) * (wm.dr2_R12 - tx * wm.dr2_R32)
-    //               + 2 * (-wm.R22 + ty * wm.R32) * (-wm.dr2_R22 + ty * wm.dr2_R32)))
-    //         / common_2
-    //         + (common_3
-    //            * ((-wm.R22 + ty * wm.R32) * (-(sx * wm.dr2_R11) - sy * wm.dr2_R12 - sz * wm.dr2_R13)
-    //               + (-az + bz - sx * wm.R31 - sy * wm.R32 - sz * wm.R33) * (-(ty * wm.dr2_R12) + tx * wm.dr2_R22)
-    //               + (wm.R12 - tx * wm.R32) * (-(sx * wm.dr2_R21) - sy * wm.dr2_R22 - sz * wm.dr2_R23)
-    //               + (-ay + by - sx * wm.R21 - sy * wm.R22 - sz * wm.R23) * (wm.dr2_R12 - tx * wm.dr2_R32)
-    //               + (-ax + bx - sx * wm.R11 - sy * wm.R12 - sz * wm.R13) * (-wm.dr2_R22 + ty * wm.dr2_R32)
-    //               + (-(ty * wm.R12) + tx * wm.R22) * (-(sx * wm.dr2_R31) - sy * wm.dr2_R32 - sz * wm.dr2_R33)))
-    //         / (common_1 * common_0);
-    // }
-    //
-    // constexpr auto dr_dphi() -> T
-    // {
-    //     return -0.5
-    //         * (common_0
-    //            * (2 * (-(ty * wm.R12) + tx * wm.R22) * (-(ty * wm.dr3_R12) + tx * wm.dr3_R22)
-    //               + 2 * (wm.R12 - tx * wm.R32) * (wm.dr3_R12 - tx * wm.dr3_R32)
-    //               + 2 * (-wm.R22 + ty * wm.R32) * (-wm.dr3_R22 + ty * wm.dr3_R32)))
-    //         / common_2
-    //         + (common_3
-    //            * ((-wm.R22 + ty * wm.R32) * (-(sx * wm.dr3_R11) - sy * wm.dr3_R12 - sz * wm.dr3_R13)
-    //               + (-az + bz - sx * wm.R31 - sy * wm.R32 - sz * wm.R33) * (-(ty * wm.dr3_R12) + tx * wm.dr3_R22)
-    //               + (wm.R12 - tx * wm.R32) * (-(sx * wm.dr3_R21) - sy * wm.dr3_R22 - sz * wm.dr3_R23)
-    //               + (-ay + by - sx * wm.R21 - sy * wm.R22 - sz * wm.R23) * (wm.dr3_R12 - tx * wm.dr3_R32)
-    //               + (-ax + bx - sx * wm.R11 - sy * wm.R12 - sz * wm.R13) * (-wm.dr3_R22 + ty * wm.dr3_R32)
-    //               + (-(ty * wm.R12) + tx * wm.R22) * (-(sx * wm.dr3_R31) - sy * wm.dr3_R32 - sz * wm.dr3_R33)))
-    //         / (common_1 * common_0);
-    // }
-    //
-    // constexpr auto dr_dax() -> T { return ((wm.R22 - ty * wm.R32) * common_3) / (common_1 * common_0); }
-    //
-    // constexpr auto dr_day() -> T { return ((-wm.R12 + tx * wm.R32) * common_3) / (common_1 * common_0); }
-    //
-    // constexpr auto dr_daz() -> T { return ((ty * wm.R12 - tx * wm.R22) * common_3) / (common_1 * common_0); }
-    //
-    // constexpr auto dr_dbx() -> T { return ((-wm.R22 + ty * wm.R32) * common_3) / (common_1 * common_0); }
-    //
-    // constexpr auto dr_dby() -> T { return ((wm.R12 - tx * wm.R32) * common_3) / (common_1 * common_0); }
-    //
-    // constexpr auto dr_dbz() -> T { return ((-(ty * wm.R12) + tx * wm.R22) * common_3) / (common_1 * common_0); }
-    //
-    // constexpr auto dr_dtx() -> T
-    // {
-    //     return ((-((-ay + by - sx * wm.R21 - sy * wm.R22 - sz * wm.R23) * wm.R32)
-    //              + wm.R22 * (-az + bz - sx * wm.R31 - sy * wm.R32 - sz * wm.R33))
-    //             * common_3)
-    //         / (common_1 * common_0)
-    //         - ((2 * wm.R22 * (-(ty * wm.R12) + tx * wm.R22) - 2 * wm.R32 * (wm.R12 - tx * wm.R32)) * common_0) / (2 * common_2);
-    // }
-    //
-    // constexpr auto dr_dty() -> T
-    // {
-    //     return (((-ax + bx - sx * wm.R11 - sy * wm.R12 - sz * wm.R13) * wm.R32
-    //              - wm.R12 * (-az + bz - sx * wm.R31 - sy * wm.R32 - sz * wm.R33))
-    //             * common_3)
-    //         / (common_1 * common_0)
-    //         - ((-2 * wm.R12 * (-(ty * wm.R12) + tx * wm.R22) + 2 * wm.R32 * (-wm.R22 + ty * wm.R32)) * common_0) / (2 * common_2);
-    // }
 };
 
 enum class Kind

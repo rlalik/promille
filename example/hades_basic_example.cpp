@@ -102,56 +102,104 @@ auto main(int argc, char* argv[]) -> int
                                  {0, SA::Kind::FIXED},
                                  {TMath::DegToRad() * 0, SA::Kind::FIXED},
                                  {0, SA::Kind::FIXED},
-                                 {0, SA::Kind::FIXED}, 0, 0, 0, 0, 0, 0);
+                                 {0, SA::Kind::FIXED},
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0);
 
         mille.add_planes_globals({0, SA::Kind::FIXED},
                                  {0, SA::Kind::FREE},
                                  {0, SA::Kind::FIXED},
                                  {TMath::DegToRad() * 90, SA::Kind::FIXED},
                                  {0, SA::Kind::FIXED},
-                                 {0, SA::Kind::FIXED}, 0, 0, 0, 0, 0, 0);
+                                 {0, SA::Kind::FIXED},
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0);
 
         mille.add_planes_globals({0, SA::Kind::FIXED},
                                  {0, SA::Kind::FREE},
                                  {0, SA::Kind::FIXED},
                                  {TMath::DegToRad() * 90, SA::Kind::FIXED},
                                  {0, SA::Kind::FIXED},
-                                 {0, SA::Kind::FIXED}, 0, 0, 0, 0, 0, 0);
+                                 {0, SA::Kind::FIXED},
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0);
 
         mille.add_planes_globals({0, SA::Kind::FREE},
                                  {0, SA::Kind::FIXED},
                                  {0, SA::Kind::FIXED},
                                  {TMath::DegToRad() * 0, SA::Kind::FIXED},
                                  {0, SA::Kind::FIXED},
-                                 {0, SA::Kind::FIXED}, 0, 0, 0, 0, 0, 0);
+                                 {0, SA::Kind::FIXED},
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0);
 
         mille.add_planes_globals({0, SA::Kind::FREE},
                                  {0, SA::Kind::FIXED},
                                  {0, SA::Kind::FIXED},
                                  {TMath::DegToRad() * 0, SA::Kind::FIXED},
                                  {0, SA::Kind::FIXED},
-                                 {0, SA::Kind::FIXED}, 0, 0, 0, 0, 0, 0);
+                                 {0, SA::Kind::FIXED},
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0);
 
         mille.add_planes_globals({0, SA::Kind::FIXED},
                                  {0, SA::Kind::FREE},
                                  {0, SA::Kind::FIXED},
                                  {TMath::DegToRad() * 90, SA::Kind::FIXED},
                                  {0, SA::Kind::FIXED},
-                                 {0, SA::Kind::FIXED}, 0, 0, 0, 0, 0, 0);
+                                 {0, SA::Kind::FIXED},
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0);
 
         mille.add_planes_globals({0, SA::Kind::FREE},
                                  {0, SA::Kind::FREE},
                                  {0, SA::Kind::FIXED},
                                  {TMath::DegToRad() * 45, SA::Kind::FIXED},
                                  {0, SA::Kind::FIXED},
-                                 {0, SA::Kind::FIXED}, 0, 0, 0, 0, 0, 0);
+                                 {0, SA::Kind::FIXED},
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0);
 
         mille.add_planes_globals({0, SA::Kind::FREE},
                                  {0, SA::Kind::FREE},
                                  {0, SA::Kind::FIXED},
                                  {TMath::DegToRad() * -45, SA::Kind::FIXED},
                                  {0, SA::Kind::FIXED},
-                                 {0, SA::Kind::FIXED}, 0, 0, 0, 0, 0, 0);
+                                 {0, SA::Kind::FIXED},
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0);
     }
 
     mille.print(true);
