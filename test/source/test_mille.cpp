@@ -1,28 +1,28 @@
-#include <StrawAlignment/StrawAlignment.hpp>
 #include <gtest/gtest.h>
+#include <mille_builder/mille_builder.hpp>
 
 TEST(Mille, AddLocals)
 {
-    auto mille = SA::MilleBuilder<SA::euler::zyz>("test_", "test");
+    auto mille = mb::mille_builder<mb::euler::zyz>("test_", "test");
 
-    mille.add_planes_globals({0, SA::Kind::FIXED},
-                             {0, SA::Kind::FIXED},
-                             {0, SA::Kind::FIXED},
-                             {0, SA::Kind::FIXED},
-                             {0, SA::Kind::FIXED},
-                             {0, SA::Kind::FIXED},
+    mille.add_planes_globals({0, mb::Kind::FIXED},
+                             {0, mb::Kind::FIXED},
+                             {0, mb::Kind::FIXED},
+                             {0, mb::Kind::FIXED},
+                             {0, mb::Kind::FIXED},
+                             {0, mb::Kind::FIXED},
                              0,
                              0,
                              0,
                              0,
                              0,
                              0,
-                             SA::Kind::FIXED,
-                             SA::Kind::FIXED,
-                             SA::Kind::FIXED,
-                             SA::Kind::FIXED);
+                             mb::Kind::FIXED,
+                             mb::Kind::FIXED,
+                             mb::Kind::FIXED,
+                             mb::Kind::FIXED);
 
-    mille.add_local(0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.15);
+    mille.add_local(0, 0, 0, 0, 0, 0, 0, 0, 0.1f, 0.15f);
 
     mille.end();
 }

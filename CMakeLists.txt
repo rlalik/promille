@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 include(cmake/prelude.cmake)
 
 project(
-    StrawAlignment
+    mille_builder
     VERSION 0.1.0
     DESCRIPTION "For MillePede with straws"
     HOMEPAGE_URL "https://example.com/"
@@ -29,23 +29,23 @@ find_package(ROOT QUIET REQUIRED COMPONENTS GenVector)
 
 # ---- Declare library ----
 
-add_library(StrawAlignment_StrawAlignment INTERFACE)
-add_library(StrawAlignment::StrawAlignment ALIAS StrawAlignment_StrawAlignment)
+add_library(mille_builder_mille_builder INTERFACE)
+add_library(mille_builder::mille_builder ALIAS mille_builder_mille_builder)
 
-target_link_libraries(StrawAlignment_StrawAlignment INTERFACE ROOT::GenVector)
+target_link_libraries(mille_builder_mille_builder INTERFACE ROOT::GenVector)
 
 set_property(
-    TARGET StrawAlignment_StrawAlignment PROPERTY
-    EXPORT_NAME StrawAlignment
+    TARGET mille_builder_mille_builder PROPERTY
+    EXPORT_NAME mille_builder
 )
 
 target_include_directories(
-    StrawAlignment_StrawAlignment ${warning_guard}
+    mille_builder_mille_builder ${warning_guard}
     INTERFACE
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
 )
 
-target_compile_features(StrawAlignment_StrawAlignment INTERFACE cxx_std_17)
+target_compile_features(mille_builder_mille_builder INTERFACE cxx_std_17)
 
 # ---- Install rules ----
 
@@ -56,7 +56,7 @@ endif()
 # ---- Examples ----
 
 if(PROJECT_IS_TOP_LEVEL)
-  option(BUILD_EXAMPLES "Build examples tree." "${StrawAlignment_DEVELOPER_MODE}")
+  option(BUILD_EXAMPLES "Build examples tree." "${mille_builder_DEVELOPER_MODE}")
   if(BUILD_EXAMPLES)
     add_subdirectory(example)
   endif()
@@ -64,12 +64,12 @@ endif()
 
 # ---- Developer mode ----
 
-if(NOT StrawAlignment_DEVELOPER_MODE)
+if(NOT mille_builder_DEVELOPER_MODE)
   return()
 elseif(NOT PROJECT_IS_TOP_LEVEL)
   message(
       AUTHOR_WARNING
-      "Developer mode is intended for developers of StrawAlignment"
+      "Developer mode is intended for developers of mille_builder"
   )
 endif()
 

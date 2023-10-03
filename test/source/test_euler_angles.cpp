@@ -1,6 +1,6 @@
-#include <StrawAlignment/EulerAngles.hpp>
-#include <StrawAlignment/StrawAlignment.hpp>
 #include <gtest/gtest.h>
+#include <mille_builder/euler_angles.hpp>
+#include <mille_builder/mille_builder.hpp>
 
 TEST(EulerAngles, ZYZ)
 {
@@ -8,13 +8,13 @@ TEST(EulerAngles, ZYZ)
     float theta = 1.0;
     float phi = 1.0;
 
-    SA::euler::zyz<double> s_zyz(1, 1, 1);
+    mb::euler::zyz<double> s_zyz(1, 1, 1);
 
-    auto R = SA::euler::make_rotation_matrix(s_zyz);
+    auto R = mb::euler::make_rotation_matrix(s_zyz);
 
-    XYZVector v(1, 2, 3);
+    mb::XYZVector v(1, 2, 3);
     auto res = R * v;
-    auto exp = XYZVector(-0.586992, 2.64322, 2.58241);
+    auto exp = mb::XYZVector(-0.586992, 2.64322, 2.58241);
 
     EXPECT_NEAR(res.x(), exp.x(), 0.0001);
     EXPECT_NEAR(res.y(), exp.y(), 0.0001);

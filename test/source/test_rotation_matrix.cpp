@@ -1,5 +1,5 @@
-#include <StrawAlignment/StrawAlignment.hpp>
 #include <gtest/gtest.h>
+#include <mille_builder/mille_builder.hpp>
 
 TEST(RotationMatrix, Components)
 {

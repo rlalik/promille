@@ -12,8 +12,8 @@
 #include <Math/Rotation3D.h>
 #include <Math/RotationZYX.h>
 #include <Math/Vector3D.h>
-#include <StrawAlignment/EulerAngles.hpp>
 #include <TMath.h>
+#include <mille_builder/euler_angles.hpp>
 
 #include "Mille.h"
 
@@ -22,39 +22,16 @@
  * for definitions.
  */
 
+namespace mb
+{
+
 using ROOT::Math::Rotation3D;
 using ROOT::Math::RotationZYX;
 using ROOT::Math::XYZPoint;
 using ROOT::Math::XYZVector;
 
-namespace SA
-{
-
 namespace geom
 {
-
-template<typename T>
-constexpr auto make_rotation_matrix(T r11, T r12, T r13, T r21, T r22, T r23, T r31, T r32, T r33) -> Rotation3D
-{
-    return Rotation3D(r11, r12, r13, r21, r22, r23, r31, r32, r33);
-}
-
-inline auto rotate(XYZVector v, Rotation3D R) -> XYZVector
-{
-    return R * v;
-}
-
-template<typename T>
-constexpr auto make_point(T x0, T y0, T z0) -> XYZPoint
-{
-    return XYZPoint(x0, y0, z0);
-}
-
-template<typename T>
-constexpr auto make_vector(T x0, T y0, T z0) -> XYZVector
-{
-    return XYZVector(x0, y0, z0);
-}
 
 inline auto distance(XYZPoint base1, XYZVector dir1, XYZPoint base2, XYZVector dir2) -> double
 {
@@ -106,7 +83,7 @@ struct derivatives
     T common_21;
     T common_22;
 
-    SA::euler::euler_base<T> wm;
+    mb::euler::euler_base<T> wm;
 
     derivatives(T gx, T gy, T gz, T ga, T gb, T gc, T ax, T ay, T az, T alpha, T beta, T gamma)
         : gx(gx)
@@ -243,7 +220,7 @@ inline auto to_kind(int v) -> Kind
 
 inline auto operator<<(std::ostream& ofs, Kind rhs) -> std::ostream&
 {
-    return ofs << std::setw(2) << (rhs == SA::Kind::FREE ? '~' : 'x');
+    return ofs << std::setw(2) << (rhs == mb::Kind::FREE ? '~' : 'x');
 }
 
 template<typename T>
@@ -257,7 +234,7 @@ struct parameter
 };
 
 template<typename T>
-auto operator<<(std::ostream& ofs, const SA::parameter<T>& rhs) -> std::ostream&
+auto operator<<(std::ostream& ofs, const mb::parameter<T>& rhs) -> std::ostream&
 {
     return ofs << rhs.kind << std::setw(12) << rhs.value;
 }
@@ -332,15 +309,15 @@ struct local_parameters
 };
 
 template<template<class> class R>
-class MilleBuilder
+class mille_builder
 {
   public:
-    MilleBuilder(const char* prefix, const char* outFileName, bool asBinary = true, bool writeZero = false)
+    mille_builder(const char* prefix, const char* outFileName, bool asBinary = true, bool writeZero = false)
         : prefix(prefix)
         , mille(outFileName, asBinary, writeZero)
     {
     }
-    ~MilleBuilder() {};
+    ~mille_builder() {}
 
     /**
      * Add tracking planes alignment definitions. Alignment is defined as fixed rotational and transformational elements, and rotational and
@@ -577,10 +554,10 @@ class MilleBuilder
                                    bpsi * TMath::DegToRad(),
                                    btheta * TMath::DegToRad(),
                                    bphi * TMath::DegToRad(),
-                                   SA::Kind::FREE,
-                                   SA::Kind::FREE,
-                                   SA::Kind::FREE,
-                                   SA::Kind::FREE);
+                                   mb::Kind::FREE,
+                                   mb::Kind::FREE,
+                                   mb::Kind::FREE,
+                                   mb::Kind::FREE);
             }
         } else if (config_word == "MATRIX") {
             double x, y, z, r11, r12, r13, r21, r22, r23, r31, r32, r33;
@@ -591,8 +568,8 @@ class MilleBuilder
                 if (infile.eof())
                     break;
 
-                auto r = geom::make_rotation_matrix(r11, r12, r13, r21, r22, r23, r31, r32, r33);
-                RotationZYX ra(r);
+                auto r = Rotation3D(r11, r12, r13, r21, r22, r23, r31, r32, r33);
+                RotationZYX ra(r);  // FIXME wrong rotation
 
                 add_planes_globals({0, to_kind(bx)},
                                    {0, to_kind(by)},
@@ -606,10 +583,10 @@ class MilleBuilder
                                    ra.Psi(),
                                    ra.Theta(),
                                    ra.Phi(),
-                                   SA::Kind::FREE,
-                                   SA::Kind::FREE,
-                                   SA::Kind::FREE,
-                                   SA::Kind::FREE);
+                                   mb::Kind::FREE,
+                                   mb::Kind::FREE,
+                                   mb::Kind::FREE,
+                                   mb::Kind::FREE);
             }
         } else {
             abort();
@@ -657,4 +634,4 @@ class MilleBuilder
     int verbose {0};
 };
 
-}  // namespace SA
+}  // namespace mb

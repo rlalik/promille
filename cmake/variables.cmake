@@ -1,11 +1,11 @@
 # ---- Developer mode ----
 
 # Developer mode enables targets and code paths in the CMake scripts that are
-# only relevant for the developer(s) of StrawAlignment
+# only relevant for the developer(s) of mille_builder
 # Targets necessary to build the project must be provided unconditionally, so
 # consumers can trivially build and package the project
 if(PROJECT_IS_TOP_LEVEL)
-  option(StrawAlignment_DEVELOPER_MODE "Enable developer mode" OFF)
+  option(mille_builder_DEVELOPER_MODE "Enable developer mode" OFF)
 endif()
 
 # ---- Warning guard ----
@@ -17,12 +17,12 @@ endif()
 set(warning_guard "")
 if(NOT PROJECT_IS_TOP_LEVEL)
   option(
-      StrawAlignment_INCLUDES_WITH_SYSTEM
-      "Use SYSTEM modifier for StrawAlignment's includes, disabling warnings"
+      mille_builder_INCLUDES_WITH_SYSTEM
+      "Use SYSTEM modifier for mille_builder's includes, disabling warnings"
       ON
   )
-  mark_as_advanced(StrawAlignment_INCLUDES_WITH_SYSTEM)
-  if(StrawAlignment_INCLUDES_WITH_SYSTEM)
+  mark_as_advanced(mille_builder_INCLUDES_WITH_SYSTEM)
+  if(mille_builder_INCLUDES_WITH_SYSTEM)
     set(warning_guard SYSTEM)
   endif()
 endif()

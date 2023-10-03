@@ -1,6 +1,6 @@
-# StrawAlignment
+# mille_builder
 
-This is the StrawAlignment project.
+This is the mille_builder project.
 
 # Building and installing
 

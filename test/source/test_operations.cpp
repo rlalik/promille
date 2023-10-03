@@ -1,27 +1,27 @@
-#include <StrawAlignment/StrawAlignment.hpp>
 #include <gtest/gtest.h>
+#include <mille_builder/mille_builder.hpp>
 
 TEST(Operations, Components)
 {
     {
-        auto b1 = SA::geom::make_point(0, 0, 0);
-        auto d1 = SA::geom::make_vector(0, 0, 1);
+        auto b1 = mb::XYZPoint(0, 0, 0);
+        auto d1 = mb::XYZVector(0, 0, 1);
 
-        auto b2 = SA::geom::make_point(1, 0, 0);
-        auto d2 = SA::geom::make_vector(0, 1, 0);
+        auto b2 = mb::XYZPoint(1, 0, 0);
+        auto d2 = mb::XYZVector(0, 1, 0);
 
-        auto dist = SA::geom::distance(b1, d1, b2, d2);
+        auto dist = mb::geom::distance(b1, d1, b2, d2);
         EXPECT_FLOAT_EQ(dist, 1);
     }
 
     {
-        auto b1 = SA::geom::make_point(0, 0, 0);
-        auto d1 = SA::geom::make_vector(0, 0, 1);
+        auto b1 = mb::XYZPoint(0, 0, 0);
+        auto d1 = mb::XYZVector(0, 0, 1);
 
-        auto b2 = SA::geom::make_point(2, 0, 0);
-        auto d2 = SA::geom::make_vector(0, 1, 0);
+        auto b2 = mb::XYZPoint(2, 0, 0);
+        auto d2 = mb::XYZVector(0, 1, 0);
 
-        auto dist = SA::geom::distance(b1, d1, b2, d2);
+        auto dist = mb::geom::distance(b1, d1, b2, d2);
         EXPECT_FLOAT_EQ(dist, 2);
     }
 }

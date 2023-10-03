@@ -1,5 +1,5 @@
-#include <StrawAlignment/StrawAlignment.hpp>
 #include <gtest/gtest.h>
+#include <mille_builder/mille_builder.hpp>
 
 static double accuracy = 0.00001;
 
@@ -11,7 +11,7 @@ TEST(Derivatives, Global)
          {-0.436231, 0.330121, 0.837092, -4.71041, 1.5327, 1.85027, 0.436231, -0.330121, -0.316471, 0.239491}}};
 
     for (const auto& d : data) {
-        SA::derivatives<double, SA::euler::zyz> derivs(d.first.first[0],
+        mb::derivatives<double, mb::euler::zyz> derivs(d.first.first[0],
                                                        d.first.first[1],
                                                        d.first.first[2],
                                                        d.first.first[3],
