@@ -3,7 +3,7 @@
 
 TEST(Mille, AddLocals)
 {
-    auto mille = mb::mille_builder<mb::euler::zyz>("test_", "test");
+    mb::mille_builder<mb::euler::zyz> mille("test_", "test");
 
     mille.add_planes_globals({0, mb::Kind::FIXED},
                              {0, mb::Kind::FIXED},

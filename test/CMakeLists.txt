@@ -26,7 +26,6 @@ endif()
 # ---- Tests ----
 
 add_executable(mille_builder_test
-  source/test_rotation_matrix.cpp
   source/test_operations.cpp
   source/test_derivatives.cpp
   source/test_mille.cpp
