@@ -34,12 +34,6 @@ namespace geom
 {
 
 template<typename T>
-constexpr auto sign(T value) -> T
-{
-    return std::signbit(value) ? -1 : 1;
-}
-
-template<typename T>
 constexpr auto make_rotation_matrix(T r11, T r12, T r13, T r21, T r22, T r23, T r31, T r32, T r33) -> Rotation3D
 {
     return Rotation3D(r11, r12, r13, r21, r22, r23, r31, r32, r33);
@@ -95,7 +89,7 @@ struct derivatives
     // track base
     T bx {0};
     T by {0};
-    T bz {0};
+
     // track direction
     T tx {0};
     T ty {0};
@@ -126,97 +120,113 @@ struct derivatives
         , az(az)
         , wm(R<T>(alpha, beta, gamma))
     {
-        // std::cout << "Gt" << ROOT::Math::XYZVector(gx, gy, gz) << "\nGr" << ROOT::Math::XYZVector(ga, gb, gc) << "\nAt"
-        // << ROOT::Math::XYZVector(ax, ay, az) << "\nWM: " << euler::make_rotation_matrix(wm) << '\n';
     }
 
-    auto update(T sx_, T sy_, T sz_, T bx_, T by_, T bz_, T tx_, T ty_) -> void
+    auto update(T sx_, T sy_, T sz_, T bx_, T by_, T tx_, T ty_) -> void
     {
         sx = sx_;
         sy = sy_;
         sz = sz_;
         bx = bx_;
         by = by_;
-        bz = bz_;
         tx = tx_;
         ty = ty_;
-
-        // std::cout << "Sl" << ROOT::Math::XYZVector(sx, sy, sz) << "\nBt" << ROOT::Math::XYZVector(bx, by, bz) << "\nTt"
-        // << ROOT::Math::XYZVector(tx, ty, 1) << '\n';
 
         // Manually optimized shortcuts for frequently appearing expressions.
         // Touch it on your own risk.
         common_0 = wm.R12 - gb * tx * wm.R12 - gc * wm.R22 + ga * tx * wm.R22 + gb * wm.R32 - tx * wm.R32;
         common_1 = gc * wm.R12 + gb * ty * wm.R12 - wm.R22 - ga * ty * wm.R22 - ga * wm.R32 + ty * wm.R32;
         common_2 = -(gc * tx * wm.R12) - ty * wm.R12 + tx * wm.R22 + gc * ty * wm.R22 + ga * tx * wm.R32 - gb * ty * wm.R32;
-        common_3 = -2 * ay + by - sx * (-(gc * wm.R11) + wm.R21 + ga * wm.R31) - sy * (-(gc * wm.R12) + wm.R22 + ga * wm.R32)
-            - sz * (-(gc * wm.R13) + wm.R23 + ga * wm.R33);
-        common_4 = -2 * ax + bx - sx * (wm.R11 - gc * wm.R21 + gb * wm.R31) - sy * (wm.R12 - gc * wm.R22 + gb * wm.R32)
+        common_3 = -ax + bx - gx - sx * (wm.R11 - gc * wm.R21 + gb * wm.R31) - sy * (wm.R12 - gc * wm.R22 + gb * wm.R32)
             - sz * (wm.R13 - gc * wm.R23 + gb * wm.R33);
-        common_5 = -2 * az + bz - sx * (gb * wm.R11 - ga * wm.R21 + wm.R31) - sy * (gb * wm.R12 - ga * wm.R22 + wm.R32)
+        common_4 = -ay + by - gy - sx * (-(gc * wm.R11) + wm.R21 + ga * wm.R31) - sy * (-(gc * wm.R12) + wm.R22 + ga * wm.R32)
+            - sz * (-(gc * wm.R13) + wm.R23 + ga * wm.R33);
+        common_5 = -az - gz - sx * (gb * wm.R11 - ga * wm.R21 + wm.R31) - sy * (gb * wm.R12 - ga * wm.R22 + wm.R32)
             - sz * (gb * wm.R13 - ga * wm.R23 + wm.R33);
 
         common_10 = pow(common_0, 2) + pow(common_1, 2) + pow(common_2, 2);
-        common_11 = common_0 * common_3 + common_1 * common_4 + common_2 * common_5;
+        common_11 = common_2 * common_5 + common_0 * common_4 + common_1 * common_3;
 
         common_20 = sqrt(common_10);
         common_21 = pow(common_10, 3. / 2.);
         common_22 = fabs(common_11);
     }
 
-    constexpr auto dr_dgx() -> T { return 0; }
+    constexpr auto dr_dgx() -> T
+    {
+        return ((-(gc * wm.R12) - gb * ty * wm.R12 + wm.R22 + ga * ty * wm.R22 + ga * wm.R32 - ty * wm.R32) * (common_11))
+            / (common_20 * common_22);
+    }
 
-    constexpr auto dr_dgy() -> T { return 0; }
+    constexpr auto dr_dgy() -> T
+    {
+        return ((-wm.R12 + gb * tx * wm.R12 + gc * wm.R22 - ga * tx * wm.R22 - gb * wm.R32 + tx * wm.R32) * (common_11))
+            / (common_20 * common_22);
+    }
 
-    constexpr auto dr_dgz() -> T { return 0; }
+    constexpr auto dr_dgz() -> T
+    {
+        return ((gc * tx * wm.R12 + ty * wm.R12 - tx * wm.R22 - gc * ty * wm.R22 - ga * tx * wm.R32 + gb * ty * wm.R32) * (common_11))
+            / (common_20 * common_22);
+    }
 
     constexpr auto dr_dga() -> T
     {
-        return (((sx * wm.R21 + sy * wm.R22 + sz * wm.R23) * common_2 + common_0 * (-(sx * wm.R31) - sy * wm.R32 - sz * wm.R33)
-                 + tx * wm.R32 * common_5 + tx * wm.R22 * common_3 + (-(ty * wm.R22) - wm.R32) * common_4)
-                * common_11)
+        return (((sx * wm.R21 + sy * wm.R22 + sz * wm.R23) * (common_2) + (common_0) * (-(sx * wm.R31) - sy * wm.R32 - sz * wm.R33)
+                 + tx * wm.R32 * (common_5) + tx * wm.R22 * (common_4) + (-(ty * wm.R22) - wm.R32) * (common_3))
+                * (common_11))
             / (common_20 * common_22)
-            - ((tx * wm.R22 * common_0 + (-(ty * wm.R22) - wm.R32) * common_1 + tx * wm.R32 * common_2) * common_22) / common_21;
+            - ((2 * tx * wm.R22 * (common_0) + 2 * (-(ty * wm.R22) - wm.R32) * (common_1) + 2 * tx * wm.R32 * (common_2)) * common_22)
+            / (2 * common_21);
     }
 
     constexpr auto dr_dgb() -> T
     {
-        return (((-(sx * wm.R11) - sy * wm.R12 - sz * wm.R13) * common_2 + common_1 * (-(sx * wm.R31) - sy * wm.R32 - sz * wm.R33)
-                 - ty * wm.R32 * common_5 + (-(tx * wm.R12) + wm.R32) * common_3 + ty * wm.R12 * common_4)
-                * common_11)
+        return (((-(sx * wm.R11) - sy * wm.R12 - sz * wm.R13) * (common_2) + (common_1) * (-(sx * wm.R31) - sy * wm.R32 - sz * wm.R33)
+                 - ty * wm.R32 * (common_5) + (-(tx * wm.R12) + wm.R32) * (common_4) + ty * wm.R12 * (common_3))
+                * (common_11))
             / (common_20 * common_22)
-            - (((-(tx * wm.R12) + wm.R32) * common_0 + ty * wm.R12 * common_1 - ty * wm.R32 * common_2) * common_22) / common_21;
+            - ((2 * (-(tx * wm.R12) + wm.R32) * (common_0) + 2 * ty * wm.R12 * (common_1)-2 * ty * wm.R32 * (common_2)) * common_22)
+            / (2 * common_21);
     }
 
     constexpr auto dr_dgc() -> T
     {
-        return (((sx * wm.R11 + sy * wm.R12 + sz * wm.R13) * common_0 + (sx * wm.R21 + sy * wm.R22 + sz * wm.R23) * common_1
-                 + (-(tx * wm.R12) + ty * wm.R22) * common_5 - wm.R22 * common_3 + wm.R12 * common_4)
-                * common_11)
+        return (((sx * wm.R11 + sy * wm.R12 + sz * wm.R13) * (common_0) + (sx * wm.R21 + sy * wm.R22 + sz * wm.R23) * (common_1)
+                 + (-(tx * wm.R12) + ty * wm.R22) * (common_5)-wm.R22 * (common_4) + wm.R12 * (common_3))
+                * (common_11))
             / (common_20 * common_22)
-            - ((-wm.R22 * common_0 + wm.R12 * common_1 + (-(tx * wm.R12) + ty * wm.R22) * common_2) * common_22) / common_21;
+            - ((-2 * wm.R22 * (common_0) + 2 * wm.R12 * (common_1) + 2 * (-(tx * wm.R12) + ty * wm.R22) * (common_2)) * common_22)
+            / (2 * common_21);
     }
 
-    constexpr auto dr_dbx() -> T { return (common_1 * common_11) / (common_20 * common_22); }
+    constexpr auto dr_dbx() -> T { return ((common_1) * (common_11)) / (common_20 * common_22); }
 
-    constexpr auto dr_dby() -> T { return (common_0 * common_11) / (common_20 * common_22); }
-
-    constexpr auto dr_dbz() -> T { return (common_2 * common_11) / (common_20 * common_22); }
+    constexpr auto dr_dby() -> T { return ((common_0) * (common_11)) / (common_20 * common_22); }
 
     constexpr auto dr_dtx() -> T
     {
-        return (((-(gc * wm.R12) + wm.R22 + ga * wm.R32) * common_5 + (-(gb * wm.R12) + ga * wm.R22 - wm.R32) * common_3) * common_11)
+        return (((-(gc * wm.R12) + wm.R22 + ga * wm.R32) * (common_5) + (-(gb * wm.R12) + ga * wm.R22 - wm.R32) * (common_4)) * (common_11))
             / (common_20 * common_22)
-            - (((-(gb * wm.R12) + ga * wm.R22 - wm.R32) * common_0 + (-(gc * wm.R12) + wm.R22 + ga * wm.R32) * common_2) * common_22)
-            / common_21;
+            - ((2 * (-(gb * wm.R12) + ga * wm.R22 - wm.R32) * (common_0) + 2 * (-(gc * wm.R12) + wm.R22 + ga * wm.R32) * (common_2))
+               * common_22)
+            / (2 * common_21);
     }
 
     constexpr auto dr_dty() -> T
     {
-        return (((-wm.R12 + gc * wm.R22 - gb * wm.R32) * common_5 + (gb * wm.R12 - ga * wm.R22 + wm.R32) * common_4) * common_11)
+        return (((-wm.R12 + gc * wm.R22 - gb * wm.R32) * (common_5) + (gb * wm.R12 - ga * wm.R22 + wm.R32) * (common_3)) * (common_11))
             / (common_20 * common_22)
-            - (((gb * wm.R12 - ga * wm.R22 + wm.R32) * common_1 + (-wm.R12 + gc * wm.R22 - gb * wm.R32) * common_2) * common_22)
-            / common_21;
+            - ((2 * (gb * wm.R12 - ga * wm.R22 + wm.R32) * (common_1) + 2 * (-wm.R12 + gc * wm.R22 - gb * wm.R32) * (common_2)) * common_22)
+            / (2 * common_21);
+    }
+
+    auto print() const -> void
+    {
+        std::cout << "#1 Gt" << ROOT::Math::XYZVector(gx, gy, gz) << "  Gr" << ROOT::Math::XYZVector(ga, gb, gc) << "  At"
+                  << ROOT::Math::XYZVector(ax, ay, az) << "  WM: " << euler::make_rotation_matrix(wm) << "#2 Sl"
+                  << ROOT::Math::XYZVector(sx, sy, sz) << "  Bt" << ROOT::Math::XYZVector(bx, by, 0) << "  Tt"
+                  << ROOT::Math::XYZVector(tx, ty, 1) << '\n';
     }
 };
 
@@ -229,6 +239,11 @@ enum class Kind
 inline auto to_kind(int v) -> Kind
 {
     return v ? Kind::FREE : Kind::FIXED;
+}
+
+inline auto operator<<(std::ostream& ofs, Kind rhs) -> std::ostream&
+{
+    return ofs << std::setw(2) << (rhs == SA::Kind::FREE ? '~' : 'x');
 }
 
 template<typename T>
@@ -244,7 +259,7 @@ struct parameter
 template<typename T>
 auto operator<<(std::ostream& ofs, const SA::parameter<T>& rhs) -> std::ostream&
 {
-    return ofs << std::setw(2) << (rhs.kind == SA::Kind::FREE ? '~' : 'x') << std::setw(12) << rhs.value;
+    return ofs << rhs.kind << std::setw(12) << rhs.value;
 }
 
 template<typename T>
@@ -288,6 +303,34 @@ struct global_parameters
     }
 };
 
+struct local_parameters
+{
+    local_parameters(Kind lx0, Kind ly0, Kind ltx, Kind lty)
+        : params {lx0, ly0, ltx, lty}
+    {
+    }
+
+    std::array<Kind, 4> params;
+
+    auto lx0() -> Kind& { return params[0]; }
+    auto ly0() -> Kind& { return params[1]; }
+    auto ltx() -> Kind& { return params[2]; }
+    auto lty() -> Kind& { return params[3]; }
+
+    auto lx0() const -> const Kind& { return params[0]; }
+    auto ly0() const -> const Kind& { return params[1]; }
+    auto ltx() const -> const Kind& { return params[2]; }
+    auto lty() const -> const Kind& { return params[3]; }
+
+    auto dump_pede_param(int layer, std::ostream& ofs)
+    {
+        for (int i = 0; i < 4; ++i) {
+            const auto& p = params[i];
+            ofs << std::setw(10) << layer * 10 + i + 1 << std::setw(20) << (p == Kind::FREE ? '~' : 'x') << std::setw(10) << 0.0 << '\n';
+        }
+    }
+};
+
 template<template<class> class R>
 class MilleBuilder
 {
@@ -315,6 +358,10 @@ class MilleBuilder
      * @param alpha rotationa 1st angle
      * @param beta rotationa 2nd angle
      * @param gamma rotationa 3rd angle
+     * @param lx0 is base-x relevant for this plane
+     * @param ly0 is base-x relevant for this plane
+     * @param ltx is base-x relevant for this plane
+     * @param lty is base-x relevant for this plane
      */
     auto add_planes_globals(parameter<float> gx,
                             parameter<float> gy,
@@ -327,10 +374,16 @@ class MilleBuilder
                             float az,
                             float alpha,
                             float beta,
-                            float gamma)
+                            float gamma,
+                            Kind lx0,
+                            Kind ly0,
+                            Kind ltx,
+                            Kind lty)
     {
         layers_global_pars.emplace_back(gx, gy, gz, ga, gb, gc);
         layers_derivatives.emplace_back(gx.value, gy.value, gz.value, ga.value, gb.value, gc.value, ax, ay, az, alpha, beta, gamma);
+        alignment_rotation_corrections.emplace_back(1, -gc, gb, gc, 1, ga, -gb, ga, 1);
+        layers_local_pars.emplace_back(lx0, ly0, ltx, lty);
     }
 
     /**
@@ -346,59 +399,72 @@ class MilleBuilder
      * @param sy wire position y
      * @param sz wire position z
      */
-    auto add_local(int layer, float bx, float by, float bz, float tx, float ty, float sx, float sy, float sz, float dr, float sigma)
+    auto add_local(int layer, float bx, float by, float tx, float ty, float sx, float sy, float sz, float dr, float sigma)
     {
         assert(layer < layers_global_pars.size());
 
         const auto param_idx_offset = layer * 10;
-        const auto& current_layer = layers_global_pars[layer];
 
         auto& derivs = layers_derivatives[layer];
-        derivs.update(sx, sy, sz, bx, by, bz, tx, ty);
+        derivs.update(sx, sy, sz, bx, by, tx, ty);
 
-        std::array<float, 5> local_derivatives;
+        std::array<float, 4> local_derivatives;
+        int local_cnt = 0;
 
-        local_derivatives[0] = derivs.dr_dbx();
-        local_derivatives[1] = derivs.dr_dby();
-        local_derivatives[2] = derivs.dr_dbz();
-        local_derivatives[3] = derivs.dr_dtx();
-        local_derivatives[4] = derivs.dr_dty();
+        const auto& current_layer_locals = layers_local_pars[layer];
+        if (current_layer_locals.lx0() == Kind::FREE) {
+            local_derivatives[local_cnt] = derivs.dr_dbx();
+            local_cnt++;
+        }
+        if (current_layer_locals.ly0() == Kind::FREE) {
+            local_derivatives[local_cnt] = derivs.dr_dby();
+            local_cnt++;
+        }
+        if (current_layer_locals.ltx() == Kind::FREE) {
+            local_derivatives[local_cnt] = derivs.dr_dtx();
+            local_cnt++;
+        }
+        if (current_layer_locals.lty() == Kind::FREE) {
+            local_derivatives[local_cnt] = derivs.dr_dty();
+            local_cnt++;
+        }
 
         std::array<float, 6> global_derivatives;
         std::array<int, 6> global_deriv_index;
         int global_cnt = 0;
 
-        if (current_layer.gx().is_free()) {
+        const auto& current_layer_globals = layers_global_pars[layer];
+        if (current_layer_globals.gx().is_free()) {
             global_derivatives[global_cnt] = derivs.dr_dgx();
             global_deriv_index[global_cnt] = param_idx_offset + 1;
             global_cnt++;
         }
 
-        if (current_layer.gy().is_free()) {
+        if (current_layer_globals.gy().is_free()) {
             global_derivatives[global_cnt] = derivs.dr_dgy();
             global_deriv_index[global_cnt] = param_idx_offset + 2;
             global_cnt++;
         }
 
-        if (current_layer.gz().is_free()) {
+        if (current_layer_globals.gz().is_free()) {
             global_derivatives[global_cnt] = derivs.dr_dgz();
             global_deriv_index[global_cnt] = param_idx_offset + 3;
             global_cnt++;
         }
 
-        if (current_layer.ga().is_free()) {
+        if (current_layer_globals.ga().is_free()) {
             global_derivatives[global_cnt] = derivs.dr_dga();
             global_deriv_index[global_cnt] = param_idx_offset + 4;
             global_cnt++;
         }
 
-        if (current_layer.gb().is_free()) {
+        if (current_layer_globals.gb().is_free()) {
             global_derivatives[global_cnt] = derivs.dr_dgb();
             global_deriv_index[global_cnt] = param_idx_offset + 5;
             global_cnt++;
         }
 
-        if (current_layer.gc().is_free()) {
+        if (current_layer_globals.gc().is_free()) {
             global_derivatives[global_cnt] = derivs.dr_dgc();
             global_deriv_index[global_cnt] = param_idx_offset + 6;
             global_cnt++;
@@ -407,23 +473,16 @@ class MilleBuilder
         auto alignment_rotation = euler::make_rotation_matrix(derivs.wm);
         auto sloc = XYZVector(sx, sy, sz);
         auto alignment_translation = XYZVector(derivs.ax, derivs.ay, derivs.az);
-        auto alignment_translation_correction = XYZVector(current_layer.gx(), current_layer.gy(), current_layer.gz());
-        auto alignment_rotation_correction = Rotation3D(1,
-                                                        -current_layer.gc(),
-                                                        current_layer.gb(),
-                                                        current_layer.gc(),
-                                                        1,
-                                                        current_layer.ga(),
-                                                        -current_layer.gb(),
-                                                        current_layer.ga(),
-                                                        1);
+        auto alignment_translation_correction =
+            XYZVector(current_layer_globals.gx(), current_layer_globals.gy(), current_layer_globals.gz());
+        auto alignment_rotation_correction = alignment_rotation_corrections[layer];
         auto slab = alignment_rotation_correction * alignment_rotation * sloc + alignment_translation + alignment_translation_correction;
         auto srot = alignment_rotation_correction * alignment_rotation * ROOT::Math::XYZVector(0, 1, 0);
-        auto res = abs(geom::distance({bx, by, bz}, {tx, ty, 1.0}, {slab.x(), slab.y(), slab.z()}, srot) - dr);
+        auto res = abs(geom::distance({bx, by, 0}, {tx, ty, 1.0}, {slab.x(), slab.y(), slab.z()}, srot) - dr);
 
         if (verbose > 1) {
-            std::cout << "Rotation: " << alignment_rotation;
-            std::cout << "% sloc=" << sloc << "   slab=" << slab << '\n';
+            derivs.print();
+            std::cout << "# slab=" << slab << '\n';
         }
         if (verbose) {
             static const auto value_width = 12;
@@ -438,7 +497,7 @@ class MilleBuilder
             std::cout << '\n';
         }
 
-        mille.mille(5, local_derivatives.data(), global_cnt, global_derivatives.data(), global_deriv_index.data(), res, sigma);
+        mille.mille(local_cnt, local_derivatives.data(), global_cnt, global_derivatives.data(), global_deriv_index.data(), res, sigma);
     }
 
     /* Call Mille::end()
@@ -517,7 +576,11 @@ class MilleBuilder
                                    z,
                                    bpsi * TMath::DegToRad(),
                                    btheta * TMath::DegToRad(),
-                                   bphi * TMath::DegToRad());
+                                   bphi * TMath::DegToRad(),
+                                   SA::Kind::FREE,
+                                   SA::Kind::FREE,
+                                   SA::Kind::FREE,
+                                   SA::Kind::FREE);
             }
         } else if (config_word == "MATRIX") {
             double x, y, z, r11, r12, r13, r21, r22, r23, r31, r32, r33;
@@ -542,7 +605,11 @@ class MilleBuilder
                                    z,
                                    ra.Psi(),
                                    ra.Theta(),
-                                   ra.Phi());
+                                   ra.Phi(),
+                                   SA::Kind::FREE,
+                                   SA::Kind::FREE,
+                                   SA::Kind::FREE,
+                                   SA::Kind::FREE);
             }
         } else {
             abort();
@@ -566,6 +633,14 @@ class MilleBuilder
         }
 
         std::cout << bar << '\n';
+
+        i = 1;
+        for (const auto& lp : layers_local_pars) {
+            std::cout << std::setw(width) << i++ << lp.lx0() << lp.ly0() << lp.ltx() << lp.lty() << '\n';
+            ;
+        }
+
+        std::cout << bar << '\n';
         std::cout << std::right;
     }
 
@@ -575,6 +650,9 @@ class MilleBuilder
     std::string prefix;
     std::vector<global_parameters<float>> layers_global_pars;
     std::vector<derivatives<float, R>> layers_derivatives;
+    std::vector<Rotation3D> alignment_rotation_corrections;
+    std::vector<local_parameters> layers_local_pars;
+
     Mille mille;
     int verbose {0};
 };

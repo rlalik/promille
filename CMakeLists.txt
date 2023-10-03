@@ -10,6 +10,13 @@ project(
     LANGUAGES NONE
 )
 
+include(FetchContent)
+FetchContent_Declare(MillePede
+  GIT_REPOSITORY /home/dziadu/projects/hades/millepede-ii
+  GIT_TAG cmake_integration
+)
+FetchContent_MakeAvailable(MillePede)
+
 include(cmake/project-is-top-level.cmake)
 include(cmake/variables.cmake)
 

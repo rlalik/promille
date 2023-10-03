@@ -5,10 +5,10 @@ static double accuracy = 0.00001;
 
 TEST(Derivatives, Global)
 {
-    std::vector<std::pair<std::pair<std::array<double, 12>, std::array<double, 8>>, std::array<double, 11>>> data = {
-        {{{0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}}, {0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0}},
-        {{{0, 1, 2, 3, 4, 5, 1, 2, 3, 0, 0, 0}, {6, 7, 8, 9, 10, 11, 12, 13}},
-         {0, 0, 0, -3.77752, 1.54111, 1.3419, 0.434116, -0.33644, -0.835674, -0.199162, 0.15435}}};
+    std::vector<std::pair<std::pair<std::array<double, 12>, std::array<double, 7>>, std::array<double, 10>>> data = {
+        {{{0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0}}, {1, 0, 0, 0, 0, 0, -1, 0, 0, 0}},
+        {{{0, 1, 2, 3, 4, 5, 1, 2, 3, 0, 0, 0}, {6, 7, 8, 9, 10, 11, 12}},
+         {-0.436231, 0.330121, 0.837092, -4.71041, 1.5327, 1.85027, 0.436231, -0.330121, -0.316471, 0.239491}}};
 
     for (const auto& d : data) {
         SA::derivatives<double, SA::euler::zyz> derivs(d.first.first[0],
@@ -30,8 +30,7 @@ TEST(Derivatives, Global)
                       d.first.second[3],
                       d.first.second[4],
                       d.first.second[5],
-                      d.first.second[6],
-                      d.first.second[7]);
+                      d.first.second[6]);
 
         EXPECT_NEAR(derivs.dr_dgx(), d.second[0], accuracy);
         EXPECT_NEAR(derivs.dr_dgy(), d.second[1], accuracy);
@@ -43,10 +42,9 @@ TEST(Derivatives, Global)
 
         EXPECT_NEAR(derivs.dr_dbx(), d.second[6], accuracy);
         EXPECT_NEAR(derivs.dr_dby(), d.second[7], accuracy);
-        EXPECT_NEAR(derivs.dr_dbz(), d.second[8], accuracy);
 
-        EXPECT_NEAR(derivs.dr_dtx(), d.second[9], accuracy);
-        EXPECT_NEAR(derivs.dr_dty(), d.second[10], accuracy);
+        EXPECT_NEAR(derivs.dr_dtx(), d.second[8], accuracy);
+        EXPECT_NEAR(derivs.dr_dty(), d.second[9], accuracy);
     }
 }
 

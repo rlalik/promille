@@ -108,7 +108,11 @@ auto main(int argc, char* argv[]) -> int
                                  0,
                                  0,
                                  0,
-                                 0);
+                                 0,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE);
 
         mille.add_planes_globals({0, SA::Kind::FIXED},
                                  {0, SA::Kind::FREE},
@@ -121,7 +125,11 @@ auto main(int argc, char* argv[]) -> int
                                  0,
                                  0,
                                  0,
-                                 0);
+                                 0,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE);
 
         mille.add_planes_globals({0, SA::Kind::FIXED},
                                  {0, SA::Kind::FREE},
@@ -134,7 +142,11 @@ auto main(int argc, char* argv[]) -> int
                                  0,
                                  0,
                                  0,
-                                 0);
+                                 0,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE);
 
         mille.add_planes_globals({0, SA::Kind::FREE},
                                  {0, SA::Kind::FIXED},
@@ -147,7 +159,11 @@ auto main(int argc, char* argv[]) -> int
                                  0,
                                  0,
                                  0,
-                                 0);
+                                 0,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE);
 
         mille.add_planes_globals({0, SA::Kind::FREE},
                                  {0, SA::Kind::FIXED},
@@ -160,7 +176,11 @@ auto main(int argc, char* argv[]) -> int
                                  0,
                                  0,
                                  0,
-                                 0);
+                                 0,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE);
 
         mille.add_planes_globals({0, SA::Kind::FIXED},
                                  {0, SA::Kind::FREE},
@@ -173,7 +193,11 @@ auto main(int argc, char* argv[]) -> int
                                  0,
                                  0,
                                  0,
-                                 0);
+                                 0,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE);
 
         mille.add_planes_globals({0, SA::Kind::FREE},
                                  {0, SA::Kind::FREE},
@@ -186,7 +210,11 @@ auto main(int argc, char* argv[]) -> int
                                  0,
                                  0,
                                  0,
-                                 0);
+                                 0,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE);
 
         mille.add_planes_globals({0, SA::Kind::FREE},
                                  {0, SA::Kind::FREE},
@@ -199,22 +227,26 @@ auto main(int argc, char* argv[]) -> int
                                  0,
                                  0,
                                  0,
-                                 0);
+                                 0,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE,
+                                 SA::Kind::FREE);
     }
 
     mille.print(true);
 
-    mille.add_local(0, 0, 1, 2, 3, 4, 0, 0, 0, 0.1, 0.15);
-    mille.add_local(1, 1, 2, 3, 4, 5, 0, 0, 0, 0.1, 0.15);
-    mille.add_local(2, 2, 3, 4, 5, 6, 0, 0, 0, 0.1, 0.15);
-    mille.add_local(3, 0, 1, 2, 3, 4, 0, 0, 0, 0.1, 0.15);
-    mille.add_local(4, 1, 2, 3, 4, 5, 0, 0, 0, 0.1, 0.15);
-    mille.add_local(5, 2, 3, 4, 5, 6, 0, 0, 0, 0.1, 0.15);
+    mille.add_local(0, 0, 1, 2, 3, 4, 0, 0, 0.1, 0.15);
+    mille.add_local(1, 1, 2, 3, 4, 5, 0, 0, 0.1, 0.15);
+    mille.add_local(2, 2, 3, 4, 5, 6, 0, 0, 0.1, 0.15);
+    mille.add_local(3, 0, 1, 2, 3, 4, 0, 0, 0.1, 0.15);
+    mille.add_local(4, 1, 2, 3, 4, 5, 0, 0, 0.1, 0.15);
+    mille.add_local(5, 2, 3, 4, 5, 6, 0, 0, 0.1, 0.15);
     mille.end();
 
-    mille.add_local(0, 1, 2, 3, 4, 5, 0, 0, 0, 0.1, 0.15);
-    mille.add_local(1, 2, 3, 4, 5, 6, 0, 0, 0, 0.1, 0.15);
-    mille.add_local(2, 3, 4, 5, 6, 7, 0, 0, 0, 0.1, 0.15);
+    mille.add_local(0, 1, 2, 3, 4, 5, 0, 0, 0.1, 0.15);
+    mille.add_local(1, 2, 3, 4, 5, 6, 0, 0, 0.1, 0.15);
+    mille.add_local(2, 3, 4, 5, 6, 7, 0, 0, 0.1, 0.15);
     mille.end();
 
     return 0;

@@ -31,10 +31,9 @@ add_executable(StrawAlignment_test
   source/test_derivatives.cpp
   source/test_mille.cpp
   source/test_euler_angles.cpp
-  ../include/StrawAlignment/Mille.cc
 )
 
-target_link_libraries(StrawAlignment_test PRIVATE ${GTEST_TRG} StrawAlignment::StrawAlignment)
+target_link_libraries(StrawAlignment_test PRIVATE ${GTEST_TRG} StrawAlignment::StrawAlignment MP2::Mille)
 target_compile_features(StrawAlignment_test PRIVATE cxx_std_17)
 
 target_compile_options(StrawAlignment_test PUBLIC -Wmaybe-uninitialized;-Wpedantic)

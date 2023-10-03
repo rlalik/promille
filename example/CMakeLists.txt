@@ -22,6 +22,7 @@ endfunction()
 
 add_example(hades_basic_example)
 
-target_sources(hades_basic_example PRIVATE ../include/StrawAlignment/Mille.cc)
+target_sources(hades_basic_example PRIVATE)
+target_link_libraries(hades_basic_example PRIVATE MP2::Mille)
 
 add_folders(Example)

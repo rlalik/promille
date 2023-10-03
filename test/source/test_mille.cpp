@@ -16,9 +16,13 @@ TEST(Mille, AddLocals)
                              0,
                              0,
                              0,
-                             0);
+                             0,
+                             SA::Kind::FIXED,
+                             SA::Kind::FIXED,
+                             SA::Kind::FIXED,
+                             SA::Kind::FIXED);
 
-    mille.add_local(0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.15);
+    mille.add_local(0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.15);
 
     mille.end();
 }
