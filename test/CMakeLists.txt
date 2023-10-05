@@ -30,6 +30,7 @@ add_executable(mille_builder_test
   source/test_derivatives.cpp
   source/test_mille.cpp
   source/test_euler_angles.cpp
+  source/test_alignment_models.cpp
 )
 
 target_link_libraries(mille_builder_test PRIVATE ${GTEST_TRG} mille_builder::mille_builder MP2::Mille)

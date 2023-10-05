@@ -91,163 +91,195 @@ auto main(int argc, char* argv[]) -> int
         putchar('\n');
     }
 
-    auto mille = mb::mille_builder<mb::euler::zyz>("test_", "hades_basic_example_alignment_data.bin");
-    mille.set_verbose(verbose_flag);
+    mb::mille_builder<mb::sts_residua<float, mb::euler::zyz>> mille("test_", "test");
 
-    if (input_data_file.length()) {
-        mille.read_global_data(input_data_file);
-    } else {
-        mille.add_planes_globals({0, mb::Kind::FREE},
-                                 {0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 {float(TMath::DegToRad()) * 0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE);
+    mille.set_local_parameter(0, "Bx");
+    mille.set_local_parameter(1, "By");
+    mille.set_local_parameter(2, "Tx");
+    mille.set_local_parameter(3, "Ty");
 
-        mille.add_planes_globals({0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FREE},
-                                 {0, mb::Kind::FIXED},
-                                 {float(TMath::DegToRad()) * 90, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE);
+    mille.add_global_parameter(16, -10, "Tz1");
+    mille.add_global_parameter(15, -20, "Ty1");
+    mille.add_global_parameter(14, -30, "Tx1");
+    mille.add_global_parameter(11, -40, "Ra1");
+    mille.add_global_parameter(12, -50, "Rb1");
+    mille.add_global_parameter(13, -60, "Rc1");
 
-        mille.add_planes_globals({0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FREE},
-                                 {0, mb::Kind::FIXED},
-                                 {float(TMath::DegToRad()) * 90, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE);
-
-        mille.add_planes_globals({0, mb::Kind::FREE},
-                                 {0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 {float(TMath::DegToRad()) * 0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE);
-
-        mille.add_planes_globals({0, mb::Kind::FREE},
-                                 {0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 {float(TMath::DegToRad()) * 0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE);
-
-        mille.add_planes_globals({0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FREE},
-                                 {0, mb::Kind::FIXED},
-                                 {float(TMath::DegToRad()) * 90, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE);
-
-        mille.add_planes_globals({0, mb::Kind::FREE},
-                                 {0, mb::Kind::FREE},
-                                 {0, mb::Kind::FIXED},
-                                 {float(TMath::DegToRad()) * 45, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE);
-
-        mille.add_planes_globals({0, mb::Kind::FREE},
-                                 {0, mb::Kind::FREE},
-                                 {0, mb::Kind::FIXED},
-                                 {float(TMath::DegToRad()) * -45, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 {0, mb::Kind::FIXED},
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE,
-                                 mb::Kind::FREE);
-    }
+    // mille.add_globals_set(0, 1, 2, 3, 4, 5, 6, 10, 20, 30, 40, 50, 60);
+    mille.add_plane(0, 11, 12, 13, 14, 15, 16)
+        .set_globals_configuration(mb::Kind::FREE, mb::Kind::FREE, mb::Kind::FIXED, mb::Kind::FIXED, mb::Kind::FIXED, mb::Kind::FREE)
+        .set_locals_configuration(mb::Kind::FREE, mb::Kind::FIXED, mb::Kind::FIXED, mb::Kind::FREE);
 
     mille.print(true);
 
-    mille.add_local(0, 0, 1, 2, 3, 4, 0, 0, 0.1, 0.15);
-    mille.add_local(1, 1, 2, 3, 4, 5, 0, 0, 0.1, 0.15);
-    mille.add_local(2, 2, 3, 4, 5, 6, 0, 0, 0.1, 0.15);
-    mille.add_local(3, 0, 1, 2, 3, 4, 0, 0, 0.1, 0.15);
-    mille.add_local(4, 1, 2, 3, 4, 5, 0, 0, 0.1, 0.15);
-    mille.add_local(5, 2, 3, 4, 5, 6, 0, 0, 0.1, 0.15);
-    mille.end();
+    mille.add_measurement(0, 0, 0, mb::XYZPoint(0, 0, 1), mb::XYZVector(2, 3, 4));
 
-    mille.add_local(0, 1, 2, 3, 4, 5, 0, 0, 0.1, 0.15);
-    mille.add_local(1, 2, 3, 4, 5, 6, 0, 0, 0.1, 0.15);
-    mille.add_local(2, 3, 4, 5, 6, 7, 0, 0, 0.1, 0.15);
-    mille.end();
+    /*
+        auto mille = mb::mille_builder<mb::euler::zyz>("test_", "hades_basic_example_alignment_data.bin");
+        mille.set_verbose(verbose_flag);
 
+        if (input_data_file.length()) {
+            mille.read_global_data(input_data_file);
+        } else {
+            mille.add_globals_set(0,
+                                  {1, 0, mb::Kind::FREE},
+                                  {2, 0, mb::Kind::FIXED},
+                                  {3, 0, mb::Kind::FIXED},
+                                  {4, float(TMath::DegToRad()) * 0, mb::Kind::FIXED},
+                                  {5, 0, mb::Kind::FIXED},
+                                  {6, 0, mb::Kind::FIXED},
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE);
+
+            mille.add_globals_set(1,
+                                  {1, 0, mb::Kind::FIXED},
+                                  {2, 0, mb::Kind::FREE},
+                                  {3, 0, mb::Kind::FIXED},
+                                  {4, float(TMath::DegToRad()) * 90, mb::Kind::FIXED},
+                                  {5, 0, mb::Kind::FIXED},
+                                  {6, 0, mb::Kind::FIXED},
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE);
+
+            mille.add_globals_set(2,
+                                  {1, 0, mb::Kind::FIXED},
+                                  {2, 0, mb::Kind::FREE},
+                                  {3, 0, mb::Kind::FIXED},
+                                  {4, float(TMath::DegToRad()) * 90, mb::Kind::FIXED},
+                                  {5, 0, mb::Kind::FIXED},
+                                  {6, 0, mb::Kind::FIXED},
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE);
+
+            mille.add_globals_set(3,
+                                  {1, 0, mb::Kind::FREE},
+                                  {2, 0, mb::Kind::FIXED},
+                                  {3, 0, mb::Kind::FIXED},
+                                  {4, float(TMath::DegToRad()) * 0, mb::Kind::FIXED},
+                                  {5, 0, mb::Kind::FIXED},
+                                  {6, 0, mb::Kind::FIXED},
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE);
+
+            mille.add_globals_set(4,
+                                  {1, 0, mb::Kind::FREE},
+                                  {2, 0, mb::Kind::FIXED},
+                                  {3, 0, mb::Kind::FIXED},
+                                  {4, float(TMath::DegToRad()) * 0, mb::Kind::FIXED},
+                                  {5, 0, mb::Kind::FIXED},
+                                  {6, 0, mb::Kind::FIXED},
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE);
+
+            mille.add_globals_set(5,
+                                  {1, 0, mb::Kind::FIXED},
+                                  {2, 0, mb::Kind::FREE},
+                                  {3, 0, mb::Kind::FIXED},
+                                  {4, float(TMath::DegToRad()) * 90, mb::Kind::FIXED},
+                                  {5, 0, mb::Kind::FIXED},
+                                  {6, 0, mb::Kind::FIXED},
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE);
+
+            mille.add_globals_set(6,
+                                  {1, 0, mb::Kind::FREE},
+                                  {2, 0, mb::Kind::FREE},
+                                  {3, 0, mb::Kind::FIXED},
+                                  {4, float(TMath::DegToRad()) * 45, mb::Kind::FIXED},
+                                  {5, 0, mb::Kind::FIXED},
+                                  {6, 0, mb::Kind::FIXED},
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE);
+
+            mille.add_globals_set(7,
+                                  {1, 0, mb::Kind::FREE},
+                                  {2, 0, mb::Kind::FREE},
+                                  {3, 0, mb::Kind::FIXED},
+                                  {4, float(TMath::DegToRad()) * -45, mb::Kind::FIXED},
+                                  {5, 0, mb::Kind::FIXED},
+                                  {6, 0, mb::Kind::FIXED},
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE,
+                                  mb::Kind::FREE);
+        }
+
+        mille.print(true);
+
+        mille.add_measurement(0, 0, 1, 2, 3, 4, 0, 0, 0.1, 0.15);
+        mille.add_measurement(1, 1, 2, 3, 4, 5, 0, 0, 0.1, 0.15);
+        mille.add_measurement(2, 2, 3, 4, 5, 6, 0, 0, 0.1, 0.15);
+        mille.add_measurement(3, 0, 1, 2, 3, 4, 0, 0, 0.1, 0.15);
+        mille.add_measurement(4, 1, 2, 3, 4, 5, 0, 0, 0.1, 0.15);
+        mille.add_measurement(5, 2, 3, 4, 5, 6, 0, 0, 0.1, 0.15);
+        mille.end();
+
+        mille.add_measurement(0, 1, 2, 3, 4, 5, 0, 0, 0.1, 0.15);
+        mille.add_measurement(1, 2, 3, 4, 5, 6, 0, 0, 0.1, 0.15);
+        mille.add_measurement(2, 3, 4, 5, 6, 7, 0, 0, 0.1, 0.15);
+        mille.end();
+    */
     return 0;
 }
