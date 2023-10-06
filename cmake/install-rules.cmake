@@ -1,6 +1,6 @@
 if(PROJECT_IS_TOP_LEVEL)
   set(
-      CMAKE_INSTALL_INCLUDEDIR "include/mille_builder-${PROJECT_VERSION}"
+      CMAKE_INSTALL_INCLUDEDIR "include/promille-${PROJECT_VERSION}"
       CACHE PATH ""
   )
 endif()
@@ -12,17 +12,17 @@ include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
 # find_package(<package>) call for consumers to find this project
-set(package mille_builder)
+set(package promille)
 
 install(
     DIRECTORY include/
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-    COMPONENT mille_builder_Development
+    COMPONENT promille_Development
 )
 
 install(
-    TARGETS mille_builder_mille_builder
-    EXPORT mille_builderTargets
+    TARGETS promille_promille
+    EXPORT promilleTargets
     INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
 )
 
@@ -34,29 +34,29 @@ write_basic_package_version_file(
 
 # Allow package maintainers to freely override the path for the configs
 set(
-    mille_builder_INSTALL_CMAKEDIR "${CMAKE_INSTALL_DATADIR}/${package}"
+    promille_INSTALL_CMAKEDIR "${CMAKE_INSTALL_DATADIR}/${package}"
     CACHE PATH "CMake package config location relative to the install prefix"
 )
-mark_as_advanced(mille_builder_INSTALL_CMAKEDIR)
+mark_as_advanced(promille_INSTALL_CMAKEDIR)
 
 install(
     FILES cmake/install-config.cmake
-    DESTINATION "${mille_builder_INSTALL_CMAKEDIR}"
+    DESTINATION "${promille_INSTALL_CMAKEDIR}"
     RENAME "${package}Config.cmake"
-    COMPONENT mille_builder_Development
+    COMPONENT promille_Development
 )
 
 install(
     FILES "${PROJECT_BINARY_DIR}/${package}ConfigVersion.cmake"
-    DESTINATION "${mille_builder_INSTALL_CMAKEDIR}"
-    COMPONENT mille_builder_Development
+    DESTINATION "${promille_INSTALL_CMAKEDIR}"
+    COMPONENT promille_Development
 )
 
 install(
-    EXPORT mille_builderTargets
-    NAMESPACE mille_builder::
-    DESTINATION "${mille_builder_INSTALL_CMAKEDIR}"
-    COMPONENT mille_builder_Development
+    EXPORT promilleTargets
+    NAMESPACE promille::
+    DESTINATION "${promille_INSTALL_CMAKEDIR}"
+    COMPONENT promille_Development
 )
 
 if(PROJECT_IS_TOP_LEVEL)

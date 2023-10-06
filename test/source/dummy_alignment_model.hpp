@@ -1,8 +1,8 @@
 #pragma once
 
 // internal
-#include <mille_builder/euler_angles.hpp>
-#include <mille_builder/mille_builder.hpp>
+#include <promille/euler_angles.hpp>
+#include <promille/promille.hpp>
 
 // ROOT
 #include <Math/Point3D.h>
@@ -22,7 +22,7 @@ using ROOT::Math::XYZPoint;
 using ROOT::Math::XYZVector;
 
 template<typename T, template<class> class R>
-struct dummy_residual_model final : mb::residual_model_base<T, 6, 4, XYZPoint, XYZVector, XYZPoint, XYZVector>
+struct dummy_residual_model final : promille::residual_model_base<T, 6, 4, XYZPoint, XYZVector, XYZPoint, XYZVector>
 {
     // gloal translational corrections
     T g_x {0};
@@ -42,7 +42,7 @@ struct dummy_residual_model final : mb::residual_model_base<T, 6, 4, XYZPoint, X
     XYZPoint current_straw_base;
     XYZVector current_straw_dir;
 
-    mb::euler::euler_base<T> wm;
+    promille::euler::euler_base<T> wm;
 
     dummy_residual_model(T gx, T gy, T gz, T ga, T gb, T gc)
         : g_x(gx)

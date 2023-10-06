@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <mille_builder/mille_builder.hpp>
+#include <promille/promille.hpp>
 
 #include "dummy_alignment_model.hpp"
 
@@ -18,7 +18,7 @@ using ROOT::Math::XYZVector;
 //          {-0.436231, 0.330121, 0.837092, -4.71041, 1.5327, 1.85027, 0.436231, -0.330121, -0.316471, 0.239491}}};
 //
 //     for (const auto& d : data) {
-//         mb::residua_base<double, mb::euler::zyz, 3, 3> derivs;
+//         pm::residua_base<double, pm::euler::zyz, 3, 3> derivs;
 //
 //         // derivs.update(d.first.second[0],
 //         //               d.first.second[1],
@@ -52,7 +52,7 @@ TEST(StrawResiduals, StsDerivatives)
          {-0.436231, 0.330121, 0.837092, -4.71041, 1.5327, 1.85027, 0.436231, -0.330121, -0.316471, 0.239491}}};
 
     for (const auto& d : data) {
-        auto derivs = mb_tests::dummy_residual_model<double, mb::euler::zyz>(
+        auto derivs = mb_tests::dummy_residual_model<double, promille::euler::zyz>(
             d.first.first[0], d.first.first[1], d.first.first[2], d.first.first[3], d.first.first[4], d.first.first[5]);
 
         derivs.set_params(d.first.first[6], d.first.first[7], d.first.first[8], d.first.first[9], d.first.first[10], d.first.first[11]);
@@ -86,7 +86,7 @@ TEST(StrawResiduals, StsDerivatives)
 //          {-0.436231, 0.330121, 0.837092, -4.71041, 1.5327, 1.85027, 0.436231, -0.330121, -0.316471, 0.239491}}};
 //
 //     for (const auto& d : data) {
-//         mb::derivatives<double, mb::euler::zyz> derivs(d.first.first[0],
+//         pm::derivatives<double, pm::euler::zyz> derivs(d.first.first[0],
 //                                                        d.first.first[1],
 //                                                        d.first.first[2],
 //                                                        d.first.first[3],

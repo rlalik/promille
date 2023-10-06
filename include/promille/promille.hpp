@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-namespace mb
+namespace promille
 {
 
 template<typename T, std::size_t Nglobal, std::size_t Nlocal, typename PointType, typename VectorType, typename... ExtraArgs>
@@ -100,7 +100,7 @@ inline auto to_kind(int v) -> Kind
 
 inline auto operator<<(std::ostream& ofs, Kind rhs) -> std::ostream&
 {
-    return ofs << std::setw(2) << (rhs == mb::Kind::FREE ? '~' : 'x');
+    return ofs << std::setw(2) << (rhs == promille::Kind::FREE ? '~' : 'x');
 }
 
 template<typename T>
@@ -128,7 +128,7 @@ struct global_parameter
 };
 
 template<typename T>
-auto operator<<(std::ostream& ofs, const mb::global_parameter<T>& rhs) -> std::ostream&
+auto operator<<(std::ostream& ofs, const promille::global_parameter<T>& rhs) -> std::ostream&
 {
     return ofs << std::setw(6) << rhs.id << std::setw(12) << rhs.value << "  " << rhs.description;
 }
@@ -152,7 +152,7 @@ struct local_parameter
 };
 
 template<typename T>
-auto operator<<(std::ostream& ofs, const mb::local_parameter<T>& rhs) -> std::ostream&
+auto operator<<(std::ostream& ofs, const promille::local_parameter<T>& rhs) -> std::ostream&
 {
     return ofs << std::setw(6) << rhs.id << "  " << rhs.description;
 }
@@ -175,7 +175,7 @@ struct parameter_state
 };
 
 template<typename T>
-auto operator<<(std::ostream& ofs, const mb::parameter_state<T>& rhs) -> std::ostream&
+auto operator<<(std::ostream& ofs, const promille::parameter_state<T>& rhs) -> std::ostream&
 {
     return ofs << std::setw(6) << rhs.ptr->id << rhs.kind << std::setw(12) << rhs.ptr->value << "  " << rhs.ptr->description;
 }
@@ -225,7 +225,7 @@ struct measurement_plane
 };
 
 template<typename ResiduaModel>
-class mille_builder
+class promille
 {
   public:
     using main_type = float;
@@ -239,7 +239,7 @@ class mille_builder
     using local_parameter_array_t = std::array<std::unique_ptr<local_param_type_t>, ResiduaModel::n_locals>;
 
   public:
-    mille_builder(const char* prefix, const char* outFileName, bool asBinary = true, bool writeZero = false)
+    promille(const char* prefix, const char* outFileName, bool asBinary = true, bool writeZero = false)
         : mille_prefix(prefix)
         , mille(outFileName, asBinary, writeZero)
         , local_parameters_list(make_locals(std::make_index_sequence<ResiduaModel::n_locals> {}))
@@ -510,4 +510,4 @@ class mille_builder
     int verbose {0};
 };
 
-}  // namespace mb
+}  // namespace promille

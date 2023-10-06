@@ -2,7 +2,7 @@
 
 #include <Math/Rotation3D.h>
 
-namespace mb::euler
+namespace promille::euler
 {
 
 template<typename EulerStruct>
@@ -108,4 +108,4 @@ struct zyz : euler_base<T>
     }
 };
 
-};  // namespace mb::euler
+};  // namespace promille::euler

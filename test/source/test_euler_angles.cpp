@@ -1,7 +1,7 @@
 // internal
 #include <gtest/gtest.h>
-#include <mille_builder/euler_angles.hpp>
-#include <mille_builder/mille_builder.hpp>
+#include <promille/euler_angles.hpp>
+#include <promille/promille.hpp>
 
 // ROOT
 #include <Math/Point3D.h>
@@ -27,7 +27,7 @@ TEST(EulerAngles, ZYZ_angles)
     rot_I.GetComponents(components_I.begin());
 
     for (const auto& d : data) {
-        const mb::euler::zyz<double> s_zyz(d.first[0], d.first[1], d.first[2]);
+        const promille::euler::zyz<double> s_zyz(d.first[0], d.first[1], d.first[2]);
 
         EXPECT_NEAR(s_zyz.a1, d.second.first[0], comp_error);
         EXPECT_NEAR(s_zyz.a2, d.second.first[1], comp_error);
@@ -35,7 +35,7 @@ TEST(EulerAngles, ZYZ_angles)
 
         EXPECT_NEAR(s_zyz.determinat(), 1.0, comp_error);
 
-        const auto rot = mb::euler::make_rotation_matrix(s_zyz);
+        const auto rot = promille::euler::make_rotation_matrix(s_zyz);
         const auto rot_t = rot.Inverse();
 
         auto rrT = rot * rot_t;
@@ -71,7 +71,7 @@ TEST(EulerAngles, ZYZ_matrix)
     rot_I.GetComponents(components_I.begin());
 
     for (const auto& d : data) {
-        const mb::euler::zyz<double> s_zyz(
+        const promille::euler::zyz<double> s_zyz(
             d.first[0], d.first[1], d.first[2], d.first[3], d.first[4], d.first[5], d.first[6], d.first[7], d.first[8]);
 
         EXPECT_NEAR(s_zyz.a1, d.second.first[0], comp_error);
@@ -80,7 +80,7 @@ TEST(EulerAngles, ZYZ_matrix)
 
         EXPECT_NEAR(s_zyz.determinat(), 1.0, comp_error);
 
-        const auto rot = mb::euler::make_rotation_matrix(s_zyz);
+        const auto rot = promille::euler::make_rotation_matrix(s_zyz);
         const auto rot_t = rot.Inverse();
 
         auto rrT = rot * rot_t;

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(mille_builderTests LANGUAGES CXX)
+project(promilleTests LANGUAGES CXX)
 
 include(../cmake/project-is-top-level.cmake)
 include(../cmake/folders.cmake)
@@ -9,7 +9,7 @@ include(../cmake/windows-set-path.cmake)
 # ---- Dependencies ----
 
 if(PROJECT_IS_TOP_LEVEL)
-  find_package(mille_builder REQUIRED)
+  find_package(promille REQUIRED)
   enable_testing()
 endif()
 
@@ -32,18 +32,18 @@ endif()
 
 # ---- Tests ----
 
-add_executable(mille_builder_test
-  source/test_mille.cpp
+add_executable(promille_test
+  source/test_promille.cpp
   source/test_euler_angles.cpp
   source/test_residual_models.cpp
 )
 
-target_link_libraries(mille_builder_test PRIVATE ${GTEST_TRG} mille_builder::mille_builder MP2::Mille ROOT::GenVector)
-target_compile_features(mille_builder_test PRIVATE cxx_std_17)
+target_link_libraries(promille_test PRIVATE ${GTEST_TRG} promille::promille MP2::Mille ROOT::GenVector)
+target_compile_features(promille_test PRIVATE cxx_std_17)
 
-target_compile_options(mille_builder_test PUBLIC -Wmaybe-uninitialized;-Wpedantic)
+target_compile_options(promille_test PUBLIC -Wmaybe-uninitialized;-Wpedantic)
 
-add_test(NAME mille_builder_test COMMAND mille_builder_test)
+add_test(NAME promille_test COMMAND promille_test)
 
 # ---- End-of-file commands ----
 

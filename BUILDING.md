@@ -61,18 +61,18 @@ cmake --install build --config Release
 This project exports a CMake package to be used with the [`find_package`][3]
 command of CMake:
 
-* Package name: `mille_builder`
-* Target name: `mille_builder::mille_builder`
+* Package name: `promille`
+* Target name: `promille::promille`
 
 Example usage:
 
 ```cmake
-find_package(mille_builder REQUIRED)
+find_package(promille REQUIRED)
 # Declare the imported target as a build requirement using PRIVATE, where
 # project_target is a target created in the consuming project
 target_link_libraries(
     project_target PRIVATE
-    mille_builder::mille_builder
+    promille::promille
 )
 ```
 

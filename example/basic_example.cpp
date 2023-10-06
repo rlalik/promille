@@ -1,5 +1,5 @@
 // internal
-#include <mille_builder/mille_builder.hpp>
+#include <promille/promille.hpp>
 
 #include "../test/source/dummy_alignment_model.hpp"
 
@@ -102,7 +102,7 @@ auto main(int argc, char* argv[]) -> int
         putchar('\n');
     }
 
-    mb::mille_builder<mb_tests::dummy_residual_model<float, mb::euler::zyz>> mille("test_", "test");
+    promille::promille<mb_tests::dummy_residual_model<float, promille::euler::zyz>> mille("test_", "test");
 
     mille.set_local_parameter(0, "Bx");
     mille.set_local_parameter(1, "By");
@@ -138,20 +138,40 @@ auto main(int argc, char* argv[]) -> int
     mille.add_global_parameter(46, -10, "Tz4");
 
     mille.add_plane(1, 11, 12, 13, 14, 15, 16)
-        .set_globals_configuration(mb::Kind::FREE, mb::Kind::FREE, mb::Kind::FIXED, mb::Kind::FIXED, mb::Kind::FIXED, mb::Kind::FREE)
-        .set_locals_configuration(mb::Kind::FREE, mb::Kind::FIXED, mb::Kind::FIXED, mb::Kind::FREE);
+        .set_globals_configuration(promille::Kind::FREE,
+                                   promille::Kind::FREE,
+                                   promille::Kind::FIXED,
+                                   promille::Kind::FIXED,
+                                   promille::Kind::FIXED,
+                                   promille::Kind::FREE)
+        .set_locals_configuration(promille::Kind::FREE, promille::Kind::FIXED, promille::Kind::FIXED, promille::Kind::FREE);
 
     mille.add_plane(2, 21, 22, 23, 24, 25, 26)
-        .set_globals_configuration(mb::Kind::FREE, mb::Kind::FREE, mb::Kind::FIXED, mb::Kind::FIXED, mb::Kind::FIXED, mb::Kind::FREE)
-        .set_locals_configuration(mb::Kind::FREE, mb::Kind::FIXED, mb::Kind::FIXED, mb::Kind::FREE);
+        .set_globals_configuration(promille::Kind::FREE,
+                                   promille::Kind::FREE,
+                                   promille::Kind::FIXED,
+                                   promille::Kind::FIXED,
+                                   promille::Kind::FIXED,
+                                   promille::Kind::FREE)
+        .set_locals_configuration(promille::Kind::FREE, promille::Kind::FIXED, promille::Kind::FIXED, promille::Kind::FREE);
 
     mille.add_plane(3, 31, 32, 33, 34, 35, 36)
-        .set_globals_configuration(mb::Kind::FREE, mb::Kind::FREE, mb::Kind::FIXED, mb::Kind::FIXED, mb::Kind::FIXED, mb::Kind::FREE)
-        .set_locals_configuration(mb::Kind::FREE, mb::Kind::FIXED, mb::Kind::FIXED, mb::Kind::FREE);
+        .set_globals_configuration(promille::Kind::FREE,
+                                   promille::Kind::FREE,
+                                   promille::Kind::FIXED,
+                                   promille::Kind::FIXED,
+                                   promille::Kind::FIXED,
+                                   promille::Kind::FREE)
+        .set_locals_configuration(promille::Kind::FREE, promille::Kind::FIXED, promille::Kind::FIXED, promille::Kind::FREE);
 
     mille.add_plane(4, 41, 42, 43, 44, 45, 46)
-        .set_globals_configuration(mb::Kind::FREE, mb::Kind::FREE, mb::Kind::FIXED, mb::Kind::FIXED, mb::Kind::FIXED, mb::Kind::FREE)
-        .set_locals_configuration(mb::Kind::FREE, mb::Kind::FIXED, mb::Kind::FIXED, mb::Kind::FREE);
+        .set_globals_configuration(promille::Kind::FREE,
+                                   promille::Kind::FREE,
+                                   promille::Kind::FIXED,
+                                   promille::Kind::FIXED,
+                                   promille::Kind::FIXED,
+                                   promille::Kind::FREE)
+        .set_locals_configuration(promille::Kind::FREE, promille::Kind::FIXED, promille::Kind::FIXED, promille::Kind::FREE);
 
     mille.print(true);
 

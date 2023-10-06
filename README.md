@@ -1,6 +1,6 @@
-# mille_builder
+# promille
 
-This is the mille_builder project.
+This is the promille project.
 
 # Building and installing
 
@@ -12,8 +12,4 @@ See the [CONTRIBUTING](CONTRIBUTING.md) document.
 
 # Licensing
 
-<!--
-Please go to https://choosealicense.com/licenses/ and choose a license that
-fits your needs. The recommended license for a project of this type is the
-Boost Software License 1.0.
--->
+This project is licensed under MIT License. See LICENSE.txt for details.
