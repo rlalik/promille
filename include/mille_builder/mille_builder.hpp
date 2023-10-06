@@ -1,80 +1,91 @@
 #pragma once
 
-// internal
-#include <mille_builder/alignment_model.hpp>
-#include <mille_builder/euler_angles.hpp>
-
 // millepede
 #include "Mille.h"
 
-// ROOT
-#include <Math/EulerAngles.h>
-#include <Math/Point3D.h>
-#include <Math/Rotation3D.h>
-#include <Math/RotationZYX.h>
-#include <Math/Vector3D.h>
-#include <TMath.h>
-
 // system
 #include <array>
-#include <cmath>
-#include <fstream>
+#include <cassert>
+#include <iomanip>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <memory>
-#include <optional>
-#include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
-/*
- * Rotation matrix, see https://mathworld.wolfram.com/EulerAngles.html (48..50)
- * for definitions.
- */
-
 namespace mb
 {
 
-using ROOT::Math::Rotation3D;
-using ROOT::Math::RotationZYX;
-using ROOT::Math::XYZPoint;
-using ROOT::Math::XYZVector;
-
-namespace bits
+template<typename T, std::size_t Nglobal, std::size_t Nlocal, typename PointType, typename VectorType, typename... ExtraArgs>
+struct residual_model_base
 {
+    static const size_t n_globals = Nglobal;
+    static const size_t n_locals = Nlocal;
 
-constexpr auto size_t2int(size_t val) -> int
-{
-    return (val <= std::numeric_limits<int>::max()) ? static_cast<int>(val) : -1;
-}
+    auto get_residual(PointType base, VectorType track) -> T
+    {
+        calc_derivatives(base, track);
+        return calc_residual(base, track);
+    }
 
-constexpr auto int2size_t(int val) -> size_t
-{
-    return (val < 0) ? __SIZE_MAX__ : static_cast<size_t>(val);
-}
+    auto get_residual(PointType base, VectorType track, ExtraArgs... args) -> T
+    {
+        update_extras(args...);
+        calc_derivatives(base, track);
+        return calc_residual(base, track);
+    }
 
-constexpr auto f2d(float x) -> double
-{
-    return static_cast<double>(x);
-}
+    auto global_derivative(size_t variable_number) const -> T
+    {
+        assert(variable_number > 0 and variable_number <= Nglobal);
+        return global_derivatives.at(variable_number - 1);
+    }
 
-constexpr auto d2f(double x) -> double
-{
-    return static_cast<float>(x);
-}
+    auto local_derivative(size_t variable_number) const -> T
+    {
+        assert(variable_number > 0 and variable_number <= Nlocal);
+        return local_derivatives.at(variable_number - 1);
+    }
 
-}  // namespace bits
+    auto print() const -> void
+    {
+        for (size_t i = 0; i < Nglobal; ++i) {
+            std::cout << " Global derivative " << i + 1 << " = " << global_derivative(i + 1) << '\n';
+        }
 
-namespace geom
-{
+        for (size_t i = 0; i < Nlocal; ++i) {
+            std::cout << " Local derivative " << i + 1 << " = " << local_derivative(i + 1) << '\n';
+        }
+    }
 
-inline auto distance(XYZPoint base1, XYZVector dir1, XYZPoint base2, XYZVector dir2) -> XYZPoint::Scalar
-{
-    return std::abs((base1 - base2).Dot(dir1.Cross(dir2)) / dir1.Cross(dir2).R());
-}
+  protected:
+    template<size_t variable_number>
+    auto set_global_derivative() -> T&
+    {
+        static_assert(variable_number > 0 and variable_number <= Nglobal, "Global parameter index out of bounds");
+        return global_derivatives.at(variable_number - 1);
+    }
 
-}  // namespace geom
+    template<size_t variable_number>
+    auto set_local_derivative() -> T&
+    {
+        static_assert(variable_number > 0 and variable_number <= Nlocal, "Local parameter index out of bounds");
+        return local_derivatives.at(variable_number - 1);
+    }
+
+  protected:
+    constexpr residual_model_base() = default;
+
+  private:
+    std::array<T, Nglobal> global_derivatives {0};
+    std::array<T, Nlocal> local_derivatives {0};
+
+    virtual auto update_extras(ExtraArgs... args) -> void = 0;
+    virtual auto calc_residual(PointType base, VectorType track) -> T = 0;
+    virtual auto calc_derivatives(PointType base, VectorType track) -> void = 0;
+};
 
 enum class Kind
 {
@@ -98,11 +109,11 @@ struct parameter_state;
 template<typename T>
 struct global_parameter
 {
-    int id;
+    size_t id;
     T value;
     std::string description;
 
-    global_parameter(int id, T value, std::string description = "")
+    global_parameter(size_t id, T value, std::string description = "")
         : id(id)
         , value(value)
         , description(std::move(description))
@@ -125,10 +136,10 @@ auto operator<<(std::ostream& ofs, const mb::global_parameter<T>& rhs) -> std::o
 template<typename T>
 struct local_parameter
 {
-    int id;
+    size_t id;
     std::string description;
 
-    local_parameter(int id, std::string description = "")
+    local_parameter(size_t id, std::string description = "")
         : id(id)
         , description(std::move(description))
     {
@@ -231,18 +242,17 @@ class mille_builder
     mille_builder(const char* prefix, const char* outFileName, bool asBinary = true, bool writeZero = false)
         : mille_prefix(prefix)
         , mille(outFileName, asBinary, writeZero)
-        , local_parameters_list(make_locals(std::make_integer_sequence<decltype(ResiduaModel::n_locals), ResiduaModel::n_locals> {}))
+        , local_parameters_list(make_locals(std::make_index_sequence<ResiduaModel::n_locals> {}))
     {
     }
-    ~mille_builder() {}
 
-    auto add_global_parameter(int id, float value, std::string description = "") -> void
+    auto add_global_parameter(size_t id, float value, std::string description = "") -> void
     {
         global_parameters_list.push_back(std::make_unique<global_param_type_t>(id, value, std::move(description)));
         global_parameters_map[id] = global_parameters_list.back().get();
     }
 
-    auto set_local_parameter(int id, std::string description) -> void
+    auto set_local_parameter(size_t id, std::string description) -> void
     {
         local_parameters_list.at(id)->description = std::move(description);
     }
@@ -270,35 +280,17 @@ class mille_builder
      */
 
     template<typename... GlobalIds>
-    auto add_plane(int plane_id, GlobalIds... gids) -> measurement_plane_t&
+    auto add_plane(size_t plane_id, GlobalIds... gids) -> measurement_plane_t&
     {
         // static_assert(sizeof...(gids) == ResiduaModel::n_globals, "Wrong number of global parameters ids");
 
-        // printf("SIZES %ld %ld\n", sizeof...(gids), sizeof...(pd));
-
-        // {global_parameters_map.at(gids)->make_state_from_parameter()...},
-
         plane_globals_map[plane_id] = plane_configuration.size();
         plane_configuration.emplace_back(make_plane_globals_state(gids...),
-                                         make_plane_locals_state<decltype(ResiduaModel::n_locals)>(
-                                             std::make_integer_sequence<decltype(ResiduaModel::n_locals), ResiduaModel::n_locals> {}));
+                                         make_plane_locals_state(std::make_index_sequence<ResiduaModel::n_locals> {}));
 
-        // plane_configuration.back().globals = {global_parameters_map.at(gids)->make_state_from_parameter()...};
-        // plane_configuration.back().globals = { global_parameters_list[global_parameters_map.at(gids)].get() ...}; FIXME DO I NEED IT?
-
-        // plane_configuration.back().locals = detail::create_array(Kind::FREE, std::make_index_sequence<ResiduaModel::n_locals>()); FIXME
-        // !!!
         global_planes.push_back(ResiduaModel(global_parameters_map.at(gids)->value...));
 
         return plane_configuration.back();
-
-        // TODO
-        // plane_id2idx_mapping[globals_id] = layers_global_pars.size();
-
-        // layers_global_pars.emplace_back(gx, gy, gz, ga, gb, gc);
-        // layers_derivatives.emplace_back(gx.value, gy.value, gz.value, ga.value, gb.value, gc.value, ax, ay, az, alpha, beta, gamma);
-        // alignment_rotation_corrections.emplace_back(1, -gc, gb, gc, 1, ga, -gb, ga, 1);
-        // layers_local_pars.emplace_back(lx0, ly0, ltx, lty);
     }
 
     /**
@@ -314,20 +306,18 @@ class mille_builder
      * @param s_y wire position y
      * @param s_z wire position z
      */
-    template<typename... LocalPars>
-    auto add_measurement(int plane_id, float dr, float sigma, LocalPars... args) -> void
+    template<typename... LocalExtraPars>
+    auto add_measurement(size_t plane_id, float sigma, LocalExtraPars... args) -> void
     {
         auto& residua_model = global_planes[plane_globals_map.at(plane_id)];
 
-        auto distance = residua_model.get_distance(args...);
+        auto residuum = residua_model.get_residual(args...);
 
         std::array<float, ResiduaModel::n_globals> global_derivatives;
         std::array<int, ResiduaModel::n_globals> global_deriv_index;
         int global_cnt = 0;
 
-        const auto param_idx_offset = plane_id * encoder;
-
-        for (int i = 0; i < ResiduaModel::n_globals; ++i) {
+        for (size_t i = 0; i < ResiduaModel::n_globals; ++i) {
             const auto& param_state = plane_configuration[plane_globals_map.at(plane_id)].globals[i];
 
             if (param_state.is_free()) {
@@ -337,123 +327,39 @@ class mille_builder
             }
         }
 
-        residua_model.print();
+        std::array<float, ResiduaModel::n_locals> local_derivatives;
+        int local_cnt = 0;
 
-        auto plane_idx = plane_globals_map.at(plane_id);
-        for (const auto& global_par : plane_configuration[plane_idx].globals) {
-            const auto& global_parameter = *global_par.ptr;
+        for (size_t i = 0; i < ResiduaModel::n_locals; ++i) {
+            const auto& param_state = plane_configuration[plane_globals_map.at(plane_id)].locals[i];
 
-            printf("Parameter [%d] = %f for plane %d\n", plane_idx, global_parameter.value, plane_id);
-
-            if (global_par.is_free()) {
+            if (param_state.is_free()) {
+                local_derivatives[local_cnt] = residua_model.local_derivative(i + 1);
+                local_cnt++;
             }
-            //     global_derivatives[bits::int2size_t(global_cnt)] = derivs.dr_dgx();
-            //     global_deriv_index[bits::int2size_t(global_cnt)] = param_idx_offset + 1;
-            //     global_cnt++;
         }
-
-        // const auto it_idx = plane_id2idx_mapping.find(globals_id);
-        // assert(it_idx != plane_id2idx_mapping.cend());
-        // auto idx = it_idx->second;
-        //
-        // auto& derivs = layers_derivatives[idx];
-        // derivs.update(sx, sy, sz, bx, by, tx, ty);
-        //
-        // std::array<float, 4> local_derivatives;
-        // int local_cnt = 0;
-        //
-        // const auto& current_plane_locals = layers_local_pars[idx];
-        // if (current_plane_locals.lx0() == Kind::FREE) {
-        //     local_derivatives[bits::int2size_t(local_cnt)] = derivs.dr_dbx();
-        //     local_cnt++;
-        // }
-        // if (current_plane_locals.ly0() == Kind::FREE) {
-        //     local_derivatives[bits::int2size_t(local_cnt)] = derivs.dr_dby();
-        //     local_cnt++;
-        // }
-        // if (current_plane_locals.ltx() == Kind::FREE) {
-        //     local_derivatives[bits::int2size_t(local_cnt)] = derivs.dr_dtx();
-        //     local_cnt++;
-        // }
-        // if (current_plane_locals.lty() == Kind::FREE) {
-        //     local_derivatives[bits::int2size_t(local_cnt)] = derivs.dr_dty();
-        //     local_cnt++;
-        // }
-        //
-        // std::array<float, 6> global_derivatives;
-        // std::array<int, 6> global_deriv_index;
-        // int global_cnt = 0;
-        // const auto param_idx_offset = globals_id * 10;
-        //
-        // const auto& current_plane_globals = layers_global_pars[idx];
-        // if (current_plane_globals.gx().is_free()) {
-        //     global_derivatives[bits::int2size_t(global_cnt)] = derivs.dr_dgx();
-        //     global_deriv_index[bits::int2size_t(global_cnt)] = param_idx_offset + 1;
-        //     global_cnt++;
-        // }
-        //
-        // if (current_plane_globals.gy().is_free()) {
-        //     global_derivatives[bits::int2size_t(global_cnt)] = derivs.dr_dgy();
-        //     global_deriv_index[bits::int2size_t(global_cnt)] = param_idx_offset + 2;
-        //     global_cnt++;
-        // }
-        //
-        // if (current_plane_globals.gz().is_free()) {
-        //     global_derivatives[bits::int2size_t(global_cnt)] = derivs.dr_dgz();
-        //     global_deriv_index[bits::int2size_t(global_cnt)] = param_idx_offset + 3;
-        //     global_cnt++;
-        // }
-        //
-        // if (current_plane_globals.ga().is_free()) {
-        //     global_derivatives[bits::int2size_t(global_cnt)] = derivs.dr_dga();
-        //     global_deriv_index[bits::int2size_t(global_cnt)] = param_idx_offset + 4;
-        //     global_cnt++;
-        // }
-        //
-        // if (current_plane_globals.gb().is_free()) {
-        //     global_derivatives[bits::int2size_t(global_cnt)] = derivs.dr_dgb();
-        //     global_deriv_index[bits::int2size_t(global_cnt)] = param_idx_offset + 5;
-        //     global_cnt++;
-        // }
-        //
-        // if (current_plane_globals.gc().is_free()) {
-        //     global_derivatives[bits::int2size_t(global_cnt)] = derivs.dr_dgc();
-        //     global_deriv_index[bits::int2size_t(global_cnt)] = param_idx_offset + 6;
-        //     global_cnt++;
-        // }
-        //
-        // auto alignment_rotation = euler::make_rotation_matrix(derivs.wm);
-        // auto sloc = XYZVector(sx, sy, sz);
-        // auto alignment_translation = XYZVector(derivs.a_x, derivs.a_y, derivs.a_z);
-        // auto alignment_translation_correction =
-        //     XYZVector(current_plane_globals.gx(), current_plane_globals.gy(), current_plane_globals.gz());
-        // auto alignment_rotation_correction = alignment_rotation_corrections[idx];
-        // auto slab = alignment_rotation_correction * alignment_rotation * sloc + alignment_translation + alignment_translation_correction;
-        // auto srot = alignment_rotation_correction * alignment_rotation * ROOT::Math::XYZVector(0, 1, 0);
-        // auto res = abs(bits::d2f(geom::distance({bx, by, 0}, {tx, ty, 1.0}, {slab.x(), slab.y(), slab.z()}, srot)) - dr);
 
         if (verbose) {
             std::cout << " --- GLOBALS ID " << plane_id << " ---\n";
         }
         if (verbose > 1) {
-            // derivs.print();
-            // std::cout << "# slab=" << slab << '\n';
+            residua_model.print();
         }
         if (verbose) {
             static const size_t value_width = 12;
-            // std::cout << "+ " << std::setw(3) << globals_id << "   res=" << std::setw(value_width) << res
-            // << "   sigma=" << std::setw(value_width) << sigma << "   NLC=" << local_derivatives.size();
-            // for (const auto& ld : local_derivatives)
-            // std::cout << "  " << std::setw(value_width) << ld;
+            std::cout << "   res=" << std::setw(value_width) << residuum << "   sigma=" << std::setw(value_width) << sigma
+                      << "   NLC=" << local_derivatives.size();
+            for (const auto& ld : local_derivatives)
+                std::cout << "  " << std::setw(value_width) << ld;
 
             std::cout << "   NGL=" << global_cnt;
-            for (int i = 0; i < global_cnt; ++i)
-                std::cout << "  " << std::setw(value_width) << global_derivatives[i];
+            for (size_t i = 0; i < global_cnt; ++i)
+                std::cout << std::setw(5) << global_deriv_index[i] << ":" << std::setw(value_width) << global_derivatives[i];
             std::cout << '\n';
         }
         //
-        // mille.mille(
-        //     local_cnt, local_derivatives.data(), global_cnt, global_derivatives.data(), global_deriv_index.data(), (float)res, sigma);
+        mille.mille(
+            local_cnt, local_derivatives.data(), global_cnt, global_derivatives.data(), global_deriv_index.data(), (float)residuum, sigma);
     }
 
     /* Call Mille::end()
@@ -488,101 +394,6 @@ class mille_builder
         //     // if (layers_global_pars[i].is_free())  {}
         //     layers_global_pars[i].dump_pede_param(i, param_file);
         // }
-    }
-    /**
-     * Read straw plane (global paremeters from file.
-     *
-     * File must start with the keyword describing format of the input. Allowed formats are:
-     * * EULERD - 6 parameters: 3 transformation coordinates + 3 Euler angles psi, theta, phi in degrees
-     * * EULERR - 6 parameters: 3 transformation coordinates + 3 Euler angles psi, theta, phi in radians
-     * * MATRIX - 12 parameters: 3 transformation coordinates + 9 rotational matrix components r11, r12 .. r33
-     *
-     * * After the parameters, the 6 configuration bits interpreted as transaltion and Euler angles: 0 - free, 0 - fixed;
-     * The first line is fllowed by the input data, one set per line.
-     */
-    auto read_global_data(const std::string& file_name) -> void
-    {
-        std::ifstream infile(file_name, std::ios::in);
-
-        if (!infile) {
-            std::cerr << "File " << file_name << " does not exists.\n";
-            abort();
-        }
-
-        std::string config_word;
-        infile >> config_word;
-
-        if (config_word == "EULERD") {
-            float translation_x {}, translation_y {}, translation_z {};
-            float rotation_alpha {}, rotation_beta {}, rotation_gamma {};
-            int flag_x {}, flag_y {}, flag_z {}, flag_alpha {}, flag_beta {}, flag_gamma {};
-            int cnt = 0;
-            while (true) {
-                infile >> translation_x >> translation_y >> translation_z;
-                infile >> rotation_alpha >> rotation_beta >> rotation_gamma;
-                infile >> flag_x >> flag_y >> flag_z >> flag_alpha >> flag_beta >> flag_gamma;
-                if (infile.eof()) {
-                    break;
-                }
-
-                add_plane(cnt++,
-                          {1, 0, to_kind(flag_x)},  // FIXME param ids are wrong
-                          {2, 0, to_kind(flag_y)},
-                          {3, 0, to_kind(flag_z)},
-                          {4, 0, to_kind(flag_alpha)},
-                          {5, 0, to_kind(flag_beta)},
-                          {6, 0, to_kind(flag_gamma)},
-                          translation_x,
-                          translation_y,
-                          translation_z,
-                          rotation_alpha * TMath::DegToRad(),
-                          rotation_beta * TMath::DegToRad(),
-                          rotation_gamma * TMath::DegToRad(),
-                          mb::Kind::FREE,
-                          mb::Kind::FREE,
-                          mb::Kind::FREE,
-                          mb::Kind::FREE);
-            }
-        } /*else if (config_word == "MATRIX") { FIXME need to specify exact rotation, like MATRIX-ZYZ, or similar
-            double translation_x {}, translation_y {}, translation_z {};
-            double rotation_11 {}, rotation_12 {}, rotation_13 {}, rotation_21 {}, rotation_22 {}, rotation_23 {}, rotation_31 {},
-                rotation_32 {}, rotation_33 {};
-            int flag_x {}, flag_y {}, flag_z {}, flag_alpha {}, flag_beta {}, flag_gamma {};
-            while (true) {
-                infile >> translation_x >> translation_y >> translation_z;
-                infile >> rotation_11 >> rotation_12 >> rotation_13;
-                infile >> rotation_21 >> rotation_22 >> rotation_23;
-                infile >> rotation_31 >> rotation_32 >> rotation_33;
-                infile >> flag_x >> flag_y >> flag_z >> flag_alpha >> flag_beta >> flag_gamma;
-                if (infile.eof())
-                    break;
-
-                const auto rotation = Rotation3D(
-                    rotation_11, rotation_12, rotation_13, rotation_21, rotation_22, rotation_23, rotation_31, rotation_32, rotation_33);
-                const RotationZYX rzyx(rotation);  // FIXME wrong rotation
-
-                add_planes_globals({0, to_kind(flag_x)},
-                                   {0, to_kind(flag_y)},
-                                   {0, to_kind(flag_z)},
-                                   {0, to_kind(flag_alpha)},
-                                   {0, to_kind(flag_beta)},
-                                   {0, to_kind(flag_gamma)},
-                                   translation_x,
-                                   translation_y,
-                                   translation_z,
-                                   rzyx.Psi(),
-                                   rzyx.Theta(),
-                                   rzyx.Phi(),
-                                   mb::Kind::FREE,
-                                   mb::Kind::FREE,
-                                   mb::Kind::FREE,
-                                   mb::Kind::FREE);
-            }
-        }*/
-        else
-        {
-            abort();
-        }
     }
 
     auto print(bool /*use_deg*/) const -> void
@@ -656,39 +467,27 @@ class mille_builder
         // std::cout << std::right;
     }
 
-    template<typename... LocalsKind>
-    auto set_locals_configuration(LocalsKind... kind) -> void
-    {
-    }
-
     auto set_verbose(int make_verbose) -> void { verbose = make_verbose; }
 
   private:
-    // template<typename Array, std::size_t... I>
-    // auto a2t_impl(const Array& a, std::index_sequence<I...>)
-    // {
-    //     return std::make_tuple(a[I]...);
-    // }
-
     template<typename... Is>
     auto make_plane_globals_state(Is... ints) -> decltype(measurement_plane_t::globals)
     {
         return {global_parameters_map.at(ints)->make_state_from_parameter()...};
     }
 
-    template<typename Is, Is... ints>
-    auto make_plane_locals_state(std::integer_sequence<Is, ints...> int_seq) -> decltype(measurement_plane_t::locals)
+    template<std::size_t... Is>
+    auto make_plane_locals_state(std::index_sequence<Is...> int_seq) -> decltype(measurement_plane_t::locals)
     {
-        return {local_parameters_list.at(ints)->make_state_from_parameter()...};
+        return {local_parameters_list.at(Is)->make_state_from_parameter()...};
     }
 
     template<typename Is, Is... ints>
-    auto make_locals(std::integer_sequence<Is, ints...>) -> local_parameter_array_t
+    auto make_locals(std::integer_sequence<Is, ints...> /* unused */) -> local_parameter_array_t
     {
         return {std::make_unique<local_parameter<main_type>>(ints)...};
     }
 
-  private:
     std::string mille_prefix;
 
     // std::map<int, size_t> plane_id2idx_mapping;
@@ -698,17 +497,16 @@ class mille_builder
     // std::vector<local_parameters> layers_local_pars;
 
     std::vector<std::unique_ptr<global_param_type_t>> global_parameters_list;
-    std::map<int, global_param_type_t*> global_parameters_map;
+    std::map<size_t, global_param_type_t*> global_parameters_map;
 
     local_parameter_array_t local_parameters_list;
 
     std::vector<ResiduaModel> global_planes;
-    std::map<int, int> plane_globals_map;
+    std::map<size_t, size_t> plane_globals_map;
 
     measurement_plane_array_t plane_configuration;
 
     Mille mille;
-    int encoder {100};
     int verbose {0};
 };
 

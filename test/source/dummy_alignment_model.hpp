@@ -1,113 +1,28 @@
 #pragma once
 
-#include <array>
-#include <cmath>
-#include <fstream>
-#include <iostream>
-#include <map>
-#include <optional>
-#include <string>
-#include <vector>
+// internal
+#include <mille_builder/euler_angles.hpp>
+#include <mille_builder/mille_builder.hpp>
 
-#include <Math/EulerAngles.h>
+// ROOT
 #include <Math/Point3D.h>
 #include <Math/Rotation3D.h>
-#include <Math/RotationZYX.h>
 #include <Math/Vector3D.h>
-#include <TMath.h>
-#include <mille_builder/euler_angles.hpp>
 
 /*
  * Rotation matrix, see https://mathworld.wolfram.com/EulerAngles.html (48..50)
  * for definitions.
  */
 
-namespace mb
+namespace mb_tests
 {
 
 using ROOT::Math::Rotation3D;
-using ROOT::Math::RotationZYX;
 using ROOT::Math::XYZPoint;
 using ROOT::Math::XYZVector;
 
-template<typename T, std::size_t Nglobal, std::size_t Nlocal, typename PointType, typename VectorType, typename... ExtraArgs>
-struct alignment_model_base
-{
-    static const int n_globals = Nglobal;
-    static const int n_locals = Nlocal;
-
-    auto set_extras(ExtraArgs... args) -> void { update_extras(args...); }
-
-    auto get_distance(PointType base, VectorType track) -> T
-    {
-        calc_derivatives(base, track);
-        return calc_distance(base, track);
-    }
-
-    auto get_distance(PointType base, VectorType track, ExtraArgs... args) -> T
-    {
-        update_extras(args...);
-        calc_derivatives(base, track);
-        return calc_distance(base, track);
-    }
-
-    auto transform(PointType point) const -> PointType { return calc_transform(point); }
-
-    auto global_derivative(int variable_number) const -> T
-    {
-        assert(variable_number > 0 and variable_number <= Nglobal);
-        return global_derivatives[variable_number];
-    }
-
-    auto local_derivative(int variable_number) const -> T
-    {
-        assert(variable_number > 0 and variable_number <= Nlocal);
-        return local_derivatives[variable_number];
-    }
-
-    auto print() const -> void
-    {
-        for (int i = 1; i <= Nglobal; ++i) {
-            std::cout << " Global derivative " << i << " = " << global_derivative(i) << '\n';
-        }
-        // std::cout << "#1 Gt" << ROOT::Math::XYZVector(g_x, g_y, g_z) << "  Gr" << ROOT::Math::XYZVector(g_a, g_b, g_c) << "  At"
-        //           << ROOT::Math::XYZVector(a_x, a_y, a_z) << "  WM: " << euler::make_rotation_matrix(wm) << "#2 Sl"
-        //           << ROOT::Math::XYZVector(s_x, s_y, s_z) << "  Bt" << ROOT::Math::XYZVector(b_x, b_y, 0) << "  Tt"
-        //           << ROOT::Math::XYZVector(t_x, t_y, 1) << '\n';
-    }
-
-  protected:
-    template<int variable_number>
-    auto set_global_derivative() -> T&
-    {
-        static_assert(variable_number > 0 and variable_number <= Nglobal, "Index out of bounds");
-        return global_derivatives[variable_number];
-    }
-
-    template<int variable_number>
-    auto set_local_derivative() -> T&
-    {
-        static_assert(variable_number > 0 and variable_number <= Nlocal, "Index out of bounds");
-        return local_derivatives[variable_number];
-    }
-
-  protected:
-    constexpr alignment_model_base() = default;
-
-  private:
-    std::array<T, Nglobal + 1> global_derivatives {0};
-    std::array<T, Nlocal + 1> local_derivatives {0};
-
-    virtual auto update_extras(ExtraArgs... args) -> void = 0;
-    virtual auto calc_distance(PointType base, VectorType track) -> T = 0;
-
-    virtual auto calc_derivatives(PointType base, VectorType track) -> void = 0;
-
-    virtual auto calc_transform(PointType point) const -> PointType = 0;
-};
-
 template<typename T, template<class> class R>
-struct sts_residua final : alignment_model_base<T, 6, 4, XYZPoint, XYZVector, XYZPoint, XYZVector>
+struct dummy_residual_model final : mb::residual_model_base<T, 6, 4, XYZPoint, XYZVector, XYZPoint, XYZVector>
 {
     // gloal translational corrections
     T g_x {0};
@@ -129,7 +44,7 @@ struct sts_residua final : alignment_model_base<T, 6, 4, XYZPoint, XYZVector, XY
 
     mb::euler::euler_base<T> wm;
 
-    sts_residua(T gx, T gy, T gz, T ga, T gb, T gc)
+    dummy_residual_model(T gx, T gy, T gz, T ga, T gb, T gc)
         : g_x(gx)
         , g_y(gy)
         , g_z(gz)
@@ -154,12 +69,12 @@ struct sts_residua final : alignment_model_base<T, 6, 4, XYZPoint, XYZVector, XY
         current_straw_dir = straw_dir;
     }
 
-    auto calc_distance(XYZPoint track_base, XYZVector track_dir) -> T override
+    auto calc_residual(XYZPoint track_base, XYZVector track_dir) -> T override
     {
         return std::abs((track_base - current_straw_base).Dot(track_dir.Cross(current_straw_dir)) / track_dir.Cross(current_straw_dir).R());
     }
 
-    auto calc_transform(XYZPoint point) const -> XYZPoint { return XYZPoint(); }
+    // auto transform(XYZPoint point) const -> XYZPoint { return XYZPoint(); }
 
     auto calc_derivatives(XYZPoint track_base, XYZVector track_dir) -> void override
     {
@@ -257,14 +172,6 @@ struct sts_residua final : alignment_model_base<T, 6, 4, XYZPoint, XYZVector, XY
                * common_22)
                 / (2 * common_21);
     }
-
-    // auto print() const -> void
-    // {
-    // std::cout << "#1 Gt" << ROOT::Math::XYZVector(g_x, g_y, g_z) << "  Gr" << ROOT::Math::XYZVector(g_a, g_b, g_c) << "  At"
-    // << ROOT::Math::XYZVector(a_x, a_y, a_z) << "  WM: " << euler::make_rotation_matrix(wm) << "#2 Sl"
-    // << ROOT::Math::XYZVector(s_x, s_y, s_z) << "  Bt" << ROOT::Math::XYZVector(b_x, b_y, 0) << "  Tt"
-    // << ROOT::Math::XYZVector(t_x, t_y, 1) << '\n';
-    // }
 };
 
-}  // namespace mb
+}  // namespace mb_tests

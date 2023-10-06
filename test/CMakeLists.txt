@@ -13,6 +13,13 @@ if(PROJECT_IS_TOP_LEVEL)
   enable_testing()
 endif()
 
+# find ROOT
+if (DEFINED ENV{ROOTSYS})
+  list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
+endif()
+
+find_package(ROOT QUIET REQUIRED COMPONENTS GenVector)
+
 find_package(GTest)
 
 if(TARGET GTest::gtest_main)
@@ -26,14 +33,12 @@ endif()
 # ---- Tests ----
 
 add_executable(mille_builder_test
-  source/test_operations.cpp
-  source/test_derivatives.cpp
   source/test_mille.cpp
   source/test_euler_angles.cpp
-  source/test_alignment_models.cpp
+  source/test_residual_models.cpp
 )
 
-target_link_libraries(mille_builder_test PRIVATE ${GTEST_TRG} mille_builder::mille_builder MP2::Mille)
+target_link_libraries(mille_builder_test PRIVATE ${GTEST_TRG} mille_builder::mille_builder MP2::Mille ROOT::GenVector)
 target_compile_features(mille_builder_test PRIVATE cxx_std_17)
 
 target_compile_options(mille_builder_test PUBLIC -Wmaybe-uninitialized;-Wpedantic)

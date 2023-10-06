@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
-#include <mille_builder/alignment_model.hpp>
+#include <mille_builder/mille_builder.hpp>
+
+#include "dummy_alignment_model.hpp"
 
 static double accuracy = 0.00001;
 
@@ -8,7 +10,7 @@ using ROOT::Math::RotationZYX;
 using ROOT::Math::XYZPoint;
 using ROOT::Math::XYZVector;
 
-// TEST(StrawResidua, Base)
+// TEST(StrawResiduals, Base)
 // {
 //     std::vector<std::pair<std::pair<std::array<double, 12>, std::array<double, 7>>, std::array<double, 10>>> data = {
 //         {{{0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0}}, {1, 0, 0, 0, 0, 0, -1, 0, 0, 0}},
@@ -42,7 +44,7 @@ using ROOT::Math::XYZVector;
 //     }
 // }
 
-TEST(StrawResidua, StsDerivatives)
+TEST(StrawResiduals, StsDerivatives)
 {
     std::vector<std::pair<std::pair<std::array<double, 12>, std::array<double, 7>>, std::array<double, 10>>> data = {
         {{{0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0}}, {1, 0, 0, 0, 0, 0, -1, 0, 0, 0}},
@@ -50,12 +52,12 @@ TEST(StrawResidua, StsDerivatives)
          {-0.436231, 0.330121, 0.837092, -4.71041, 1.5327, 1.85027, 0.436231, -0.330121, -0.316471, 0.239491}}};
 
     for (const auto& d : data) {
-        auto derivs = mb::sts_residua<double, mb::euler::zyz>(
+        auto derivs = mb_tests::dummy_residual_model<double, mb::euler::zyz>(
             d.first.first[0], d.first.first[1], d.first.first[2], d.first.first[3], d.first.first[4], d.first.first[5]);
 
         derivs.set_params(d.first.first[6], d.first.first[7], d.first.first[8], d.first.first[9], d.first.first[10], d.first.first[11]);
 
-        derivs.get_distance(XYZPoint(d.first.second[3], d.first.second[4], 0),
+        derivs.get_residual(XYZPoint(d.first.second[3], d.first.second[4], 0),
                             XYZVector(d.first.second[5], d.first.second[6], 1),
                             XYZPoint(d.first.second[0], d.first.second[1], d.first.second[2]),
                             XYZVector(0, 0, 1));
@@ -76,7 +78,7 @@ TEST(StrawResidua, StsDerivatives)
     }
 }
 
-// TEST(StrawResidua, Global)
+// TEST(StrawResiduals, Global)
 // {
 //     std::vector<std::pair<std::pair<std::array<double, 12>, std::array<double, 7>>, std::array<double, 10>>> data = {
 //         {{{0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0}}, {1, 0, 0, 0, 0, 0, -1, 0, 0, 0}},
@@ -121,7 +123,7 @@ TEST(StrawResidua, StsDerivatives)
 //     }
 // }
 
-TEST(StrawResidua, Local)
+TEST(StrawResiduals, Local)
 {
     // SA::derivatives<float, SA::euler::zyz> derivs(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
     //

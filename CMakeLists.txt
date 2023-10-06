@@ -20,19 +20,12 @@ FetchContent_MakeAvailable(MillePede)
 include(cmake/project-is-top-level.cmake)
 include(cmake/variables.cmake)
 
-# find ROOT
-if (DEFINED ENV{ROOTSYS})
-  list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
-endif()
-
-find_package(ROOT QUIET REQUIRED COMPONENTS GenVector)
-
 # ---- Declare library ----
 
 add_library(mille_builder_mille_builder INTERFACE)
 add_library(mille_builder::mille_builder ALIAS mille_builder_mille_builder)
 
-target_link_libraries(mille_builder_mille_builder INTERFACE ROOT::GenVector)
+target_link_libraries(mille_builder_mille_builder INTERFACE MP2::Mille)
 
 set_property(
     TARGET mille_builder_mille_builder PROPERTY
@@ -49,7 +42,7 @@ target_compile_features(mille_builder_mille_builder INTERFACE cxx_std_17)
 
 # ---- Install rules ----
 
-if(NOT CMAKE_SKIP_INSTALL_RULES)
+if(NOT CMAKE_SKIP_INSTALL_RULES AND CMAKE_SKIP_INSTALL_RULES)
   include(cmake/install-rules.cmake)
 endif()
 

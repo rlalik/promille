@@ -1,9 +1,18 @@
+// internal
 #include <gtest/gtest.h>
 #include <mille_builder/euler_angles.hpp>
 #include <mille_builder/mille_builder.hpp>
 
+// ROOT
+#include <Math/Point3D.h>
+#include <Math/Vector3D.h>
+
+using ROOT::Math::XYZPoint;
+using ROOT::Math::XYZVector;
+
 static const double comp_error = 0.00001;
 static const double comp_error_det = 0.00001;
+
 TEST(EulerAngles, ZYZ_angles)
 {
     std::vector<std::pair<std::array<double, 3>, std::pair<std::array<double, 3>, std::array<double, 3>>>> data = {
@@ -36,7 +45,7 @@ TEST(EulerAngles, ZYZ_angles)
         for (size_t i = 0; i < 9; ++i)
             EXPECT_NEAR(components_rrT[i], components_I[i], comp_error_det);
 
-        const mb::XYZVector track(1, 2, 3);
+        const XYZVector track(1, 2, 3);
         const auto res = rot * track;
 
         EXPECT_NEAR(res.x(), d.second.second[0], comp_error);
@@ -81,7 +90,7 @@ TEST(EulerAngles, ZYZ_matrix)
         for (size_t i = 0; i < 9; ++i)
             EXPECT_NEAR(components_rrT[i], components_I[i], comp_error_det);
 
-        const mb::XYZVector track(1, 2, 3);
+        const XYZVector track(1, 2, 3);
         const auto res = rot * track;
 
         EXPECT_NEAR(res.x(), d.second.second[0], comp_error);
