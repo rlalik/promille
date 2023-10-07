@@ -14,16 +14,16 @@ auto make_rotation_matrix(EulerStruct es) -> ROOT::Math::Rotation3D
 template<typename T>
 struct euler_base
 {
-    T a1, a2, a3;
-    T c1, s1, c2, s2, c3, s3;
-    T R11 {0}, R12 {0}, R13 {0}, R21 {0}, R22 {0}, R23 {0}, R31 {0}, R32 {0}, R33 {0};
+    T a1, a2, a3;  // angles 1,2,3 of rotation
+    T c1, s1, c2, s2, c3, s3;  // cosinus and sinus of angles 1,2,3
+    T R11 {0}, R12 {0}, R13 {0}, R21 {0}, R22 {0}, R23 {0}, R31 {0}, R32 {0}, R33 {0};  // rotation matrix elements
 
     auto determinat() const -> T
     {
         return R11 * R22 * R33 + R12 * R23 * R31 + R13 * R21 * R32 - R13 * R22 * R31 - R12 * R21 * R33 - R11 * R23 * R32;
     }
 
-    auto print() const
+    auto print() const -> void
     {
         printf("E-ANGLES: %f %f %f\n", a1, a2, a3);
         printf("E-TRIG: %f %f   %f  %f   %f %f\n", s1, c1, s2, c2, s3, c3);

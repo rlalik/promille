@@ -93,11 +93,6 @@ enum class Kind
     FREE
 };
 
-inline auto to_kind(int v) -> Kind
-{
-    return v ? Kind::FREE : Kind::FIXED;
-}
-
 inline auto operator<<(std::ostream& ofs, Kind rhs) -> std::ostream&
 {
     return ofs << std::setw(2) << (rhs == promille::Kind::FREE ? '~' : 'x');
@@ -196,9 +191,17 @@ struct measurement_plane
     template<typename... StateKind>
     auto set_globals_configuration(StateKind... kinds) -> measurement_plane<T, Nglobal, Nlocal>&
     {
-        // parameter_state<float> ps(nullptr);
-        // globals = {kinds...};
         set_params_configuration(globals, std::make_index_sequence<sizeof...(StateKind)> {}, kinds...);
+        return *this;
+    }
+
+    template<size_t N>
+    auto set_globals_configuration(const std::array<Kind, N>& kinds) -> measurement_plane<T, Nglobal, Nlocal>&
+    {
+        static_assert(N == Nglobal, "Global Kinds arrays size mismatch");
+
+        for (size_t i = 0; i < kinds.size(); ++i)
+            globals[i].kind = kinds[i];
         return *this;
     }
 
@@ -206,6 +209,16 @@ struct measurement_plane
     auto set_locals_configuration(StateKind... kinds) -> measurement_plane<T, Nglobal, Nlocal>&
     {
         set_params_configuration(locals, std::make_index_sequence<sizeof...(StateKind)> {}, kinds...);
+        return *this;
+    }
+
+    template<size_t N>
+    auto set_locals_configuration(const std::array<Kind, N>& kinds) -> measurement_plane<T, Nglobal, Nlocal>&
+    {
+        static_assert(N == Nlocal, "Local Kinds arrays size mismatch");
+
+        for (size_t i = 0; i < kinds.size(); ++i)
+            locals[i].kind = kinds[i];
         return *this;
     }
 
@@ -218,7 +231,7 @@ struct measurement_plane
     }
 
     template<typename Param>
-    auto set_param_kind(Param& p, size_t idx, Kind kind)
+    auto set_param_kind(Param& p, size_t idx, Kind kind) -> void
     {
         p.at(idx).kind = kind;
     }
@@ -239,6 +252,13 @@ class promille
     using local_parameter_array_t = std::array<std::unique_ptr<local_param_type_t>, ResiduaModel::n_locals>;
 
   public:
+    /** The Mille Wrapper class.
+     *
+     * @param prefix
+     * @param outFileName the filename to store MillePede data
+     * @param asBianry the output file format, see MillePede documentation
+     * @param writeZero see MillePede documentation
+     */
     promille(const char* prefix, const char* outFileName, bool asBinary = true, bool writeZero = false)
         : mille_prefix(prefix)
         , mille(outFileName, asBinary, writeZero)
@@ -246,37 +266,34 @@ class promille
     {
     }
 
-    auto add_global_parameter(size_t id, float value, std::string description = "") -> void
+    /** Add global apramater with given id and initial value, optionally also description of the global parameter.
+     * @param gid global parameter id, must be positive integer larger than 0
+     * @param value inttial parameter value
+     * @param description the description
+     * @return the added id
+     */
+    auto add_global_parameter(size_t gid, float value, std::string description = "") -> size_t
     {
-        global_parameters_list.push_back(std::make_unique<global_param_type_t>(id, value, std::move(description)));
-        global_parameters_map[id] = global_parameters_list.back().get();
+        global_parameters_list.push_back(std::make_unique<global_param_type_t>(gid, value, std::move(description)));
+        global_parameters_map[gid] = global_parameters_list.back().get();
+        return gid;
     }
 
-    auto set_local_parameter(size_t id, std::string description) -> void
+    /** Set local parameter description.
+     * @param lid local parameter id, should be in range 1 to N where N is number of the local params in the residual model
+     * @param description the param description
+     */
+    auto set_local_parameter(size_t lid, std::string description) -> void
     {
-        local_parameters_list.at(id)->description = std::move(description);
+        local_parameters_list.at(lid)->description = std::move(description);
     }
 
     /**
-     * Add tracking planes alignment definitions. Alignment is defined as fixed rotational and transformational elements, and rotational and
-     * transformational corrections.
+     * Add measurement plane global parameters configuration.
      *
-     * @param gx transformational global correction for x
-     * @param gy transformational global correction for y
-     * @param gz transformational global correction for z
-     * @param ga rotational global correction d_alpha
-     * @param gb rotational global correction d_beta
-     * @param gc rotational global correction d_alpha
-     * @param ax alignment x-component
-     * @param ay alignment y-component
-     * @param az alignment y-component
-     * @param alpha rotationa 1st angle
-     * @param beta rotationa 2nd angle
-     * @param gamma rotationa 3rd angle
-     * @param lx0 is base-x relevant for this plane
-     * @param ly0 is base-x relevant for this plane
-     * @param ltx is base-x relevant for this plane
-     * @param lty is base-x relevant for this plane
+     * @param plane_id the measurement plane id
+     * @param gids list of global parameters ids associated to this measurement plane
+     * @return measurement plane object
      */
 
     template<typename... GlobalIds>
