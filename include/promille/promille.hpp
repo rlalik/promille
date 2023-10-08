@@ -195,11 +195,8 @@ struct measurement_plane
         return *this;
     }
 
-    template<size_t N>
-    auto set_globals_configuration(const std::array<Kind, N>& kinds) -> measurement_plane<T, Nglobal, Nlocal>&
+    auto set_globals_configuration(const std::array<Kind, Nglobal>& kinds) -> measurement_plane<T, Nglobal, Nlocal>&
     {
-        static_assert(N == Nglobal, "Global Kinds arrays size mismatch");
-
         for (size_t i = 0; i < kinds.size(); ++i)
             globals[i].kind = kinds[i];
         return *this;
@@ -212,11 +209,8 @@ struct measurement_plane
         return *this;
     }
 
-    template<size_t N>
-    auto set_locals_configuration(const std::array<Kind, N>& kinds) -> measurement_plane<T, Nglobal, Nlocal>&
+    auto set_locals_configuration(const std::array<Kind, Nlocal>& kinds) -> measurement_plane<T, Nglobal, Nlocal>&
     {
-        static_assert(N == Nlocal, "Local Kinds arrays size mismatch");
-
         for (size_t i = 0; i < kinds.size(); ++i)
             locals[i].kind = kinds[i];
         return *this;

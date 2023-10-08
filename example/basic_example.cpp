@@ -20,11 +20,12 @@ auto main(int argc, char* argv[]) -> int
     /* Flag set by ‘--verbose’. */
     int verbose_flag {0};
 
+    option long_options[3] = {/* These options set a flag. */
+                              {"verbose", no_argument, &verbose_flag, 1},
+                              {"brief", no_argument, &verbose_flag, 0},
+                              {nullptr, 0, nullptr, 0}};
+
     while (true) {
-        static struct option long_options[] = {/* These options set a flag. */
-                                               {"verbose", no_argument, &verbose_flag, 1},
-                                               {"brief", no_argument, &verbose_flag, 0},
-                                               {nullptr, 0, nullptr, 0}};
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
