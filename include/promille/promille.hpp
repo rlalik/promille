@@ -119,7 +119,7 @@ struct global_parameter
     }
     operator T() const { return value; }
 
-    auto make_state_from_parameter(Kind kind = Kind::FREE) -> parameter_state<global_parameter<T>>
+    auto make_state_from_parameter(Kind kind = Kind::FIXED) -> parameter_state<global_parameter<T>>
     {
         return parameter_state<global_parameter<T>>(this, kind);
     }
@@ -187,7 +187,7 @@ struct parameter_state
 
     auto set_kind(Kind value) -> void
     {
-        kind == value;
+        kind = value;
         if (kind == Kind::FREE)
             ptr->is_anywere_free = true;
     }

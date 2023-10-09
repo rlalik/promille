@@ -33,6 +33,8 @@ endif()
 # ---- Tests ----
 
 add_executable(promille_test
+  source/test_parameter_state.cpp
+  source/test_measurement_plane.cpp
   source/test_promille.cpp
   source/test_euler_angles.cpp
   source/test_residual_models.cpp
