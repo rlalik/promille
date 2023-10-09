@@ -1,14 +1,14 @@
 #include <gtest/gtest.h>
 #include <promille/promille.hpp>
 
-#include "dummy_alignment_model.hpp"
+#include "dummy_residual_model.hpp"
 
 using ROOT::Math::XYZPoint;
 using ROOT::Math::XYZVector;
 
 TEST(Mille, AddLocals)
 {
-    promille::promille<mb_tests::dummy_residual_model<float, promille::euler::zyz>> mille("test_", "test");
+    promille::promille<mb_tests::dummy_residual_model<float, float>> mille("test_", "test");
     mille.set_verbose(2);
 
     mille.add_global_parameter(1, -10, "P1");
@@ -24,7 +24,7 @@ TEST(Mille, AddLocals)
 
     mille.print(true);
 
-    mille.add_measurement(0, 0.1f, XYZPoint(0, 0, 0), XYZVector(0, 0, 1), XYZPoint(0, 0, 0), XYZVector(0, 0, 1));
+    mille.add_measurement(0, 0, 0, 0, 0);
 
     mille.end();
 }

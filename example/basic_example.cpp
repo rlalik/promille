@@ -1,7 +1,7 @@
 // internal
 #include <promille/promille.hpp>
 
-#include "../test/source/dummy_alignment_model.hpp"
+#include "../test/source/dummy_residual_model.hpp"
 
 // ROOT
 #include <Math/Point3D.h>
@@ -74,7 +74,7 @@ auto main(int argc, char* argv[]) -> int
         putchar('\n');
     }
 
-    promille::promille<mb_tests::dummy_residual_model<float, promille::euler::zyz>> mille("test_", "test");
+    promille::promille<mb_tests::dummy_residual_model<float, float>> mille("test_", "test");
 
     mille.set_local_parameter(0, "Bx");
     mille.set_local_parameter(1, "By");
@@ -159,7 +159,7 @@ auto main(int argc, char* argv[]) -> int
 
     mille.print(true);
 
-    mille.add_measurement(1, 0, XYZPoint(0, 0, 1), XYZVector(2, 3, 4));
+    mille.add_measurement(1, 0, 0, 0, 0);
 
     return 0;
 }

@@ -82,7 +82,7 @@ struct residual_model_base
     std::array<T, Nglobal> global_derivatives {0};
     std::array<T, Nlocal> local_derivatives {0};
 
-    virtual auto update_extras(ExtraArgs... args) -> void = 0;
+    virtual auto update_extras(ExtraArgs... args) -> void {};
     virtual auto calc_residual(PointType base, VectorType track) -> T = 0;
     virtual auto calc_derivatives(PointType base, VectorType track) -> void = 0;
 };
