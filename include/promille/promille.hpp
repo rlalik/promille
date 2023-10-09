@@ -488,6 +488,8 @@ class promille
         // std::cout << std::right;
     }
 
+    auto get_mille() -> Mille& { return mille; }
+
     auto set_verbose(int make_verbose) -> void { verbose = make_verbose; }
 
   private:
