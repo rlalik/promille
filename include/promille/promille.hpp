@@ -104,9 +104,12 @@ struct parameter_state;
 template<typename T>
 struct global_parameter
 {
+    using type = T;
+
     size_t id;
     T value;
     std::string description;
+    bool is_anywere_free {false};
 
     global_parameter(size_t id, T value, std::string description = "")
         : id(id)
@@ -136,6 +139,9 @@ auto operator<<(std::ostream& ofs, const promille::global_parameter<T>& rhs) -> 
 template<typename T>
 struct local_parameter
 {
+    using type = T;
+    bool is_anywere_free {false};
+
     size_t id;
     std::string description;
 
@@ -160,13 +166,30 @@ auto operator<<(std::ostream& ofs, const promille::local_parameter<T>& rhs) -> s
 template<typename T>
 struct parameter_state
 {
+  private:
     T* ptr;
     Kind kind;
 
+  public:
     explicit constexpr parameter_state(T* ptr, Kind kind = Kind::FREE)
         : ptr(ptr)
         , kind(kind)
     {
+    }
+
+    auto get() -> T& { return *ptr; }
+
+    auto get() const -> const T& { return *ptr; }
+
+    auto get_kind() -> Kind { return kind; }
+
+    auto get_kind() const -> const Kind { return kind; }
+
+    auto set_kind(Kind value) -> void
+    {
+        kind == value;
+        if (kind == Kind::FREE)
+            ptr->is_anywere_free = true;
     }
 
     auto is_free() const -> bool { return kind == Kind::FREE; }
@@ -210,7 +233,7 @@ struct measurement_plane
     auto set_globals_configuration(const std::array<Kind, Nglobal>& kinds) -> measurement_plane<T, ResidualModel>&
     {
         for (size_t i = 0; i < kinds.size(); ++i)
-            globals[i].kind = kinds[i];
+            globals[i].set_kind(kinds[i]);
         return *this;
     }
 
@@ -224,7 +247,7 @@ struct measurement_plane
     auto set_locals_configuration(const std::array<Kind, Nlocal>& kinds) -> measurement_plane<T, ResidualModel>&
     {
         for (size_t i = 0; i < kinds.size(); ++i)
-            locals[i].kind = kinds[i];
+            locals[i].set_kind(kinds[i]);
         return *this;
     }
 
@@ -243,7 +266,7 @@ struct measurement_plane
     template<typename Param>
     auto set_param_kind(Param& p, size_t idx, Kind kind) -> void
     {
-        p.at(idx).kind = kind;
+        p.at(idx).set_kind(kind);
     }
 };
 
@@ -348,7 +371,7 @@ class promille
 
             if (param_state.is_free()) {
                 global_derivatives[global_cnt] = residua_model.global_derivative(i + 1);
-                global_deriv_index[global_cnt] = param_state.ptr->id;
+                global_deriv_index[global_cnt] = param_state.get().id;
                 global_cnt++;
             }
         }
@@ -417,8 +440,8 @@ class promille
         param_file << "Parameter\n";
         auto max_globals = global_parameters_list.size();
         for (decltype(max_globals) i = 0; i < max_globals; ++i) {
-            // if (layers_global_pars[i].is_free())  {}
-            global_parameters_list[i]->dump_pede_param(param_file);
+            if (global_parameters_list[i]->is_anywere_free)
+                global_parameters_list[i]->dump_pede_param(param_file);
         }
     }
 
@@ -449,13 +472,13 @@ class promille
             std::cout << '[' << std::setw(5) << plane_ids_it.first << ']';
 
             for (const auto id : plane_configuration[plane_ids_it.second].globals) {
-                std::cout << std::setw(5) << id.ptr->id << id.kind;
+                std::cout << std::setw(5) << id.get().id << id.get_kind();
             }
 
             std::cout << "  |";
 
             for (const auto id : plane_configuration[plane_ids_it.second].locals) {
-                std::cout << std::setw(5) << id.ptr->id << id.kind;
+                std::cout << std::setw(5) << id.get().id << id.get_kind();
             }
 
             // for (const auto id : plane_configuration[plane_ids_it.second].locals) {
