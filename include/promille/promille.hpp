@@ -120,6 +120,11 @@ struct global_parameter
     {
         return parameter_state<global_parameter<T>>(this, kind);
     }
+
+    auto dump_pede_param(std::ostream& ofs) -> void
+    {
+        ofs << std::setw(10) << id << std::setw(20) << value << std::setw(10) << 0.0 << '\n';
+    }
 };
 
 template<typename T>
@@ -408,13 +413,13 @@ class promille
         std::ofstream param_file(mille_prefix + std::string("params.txt"));
         if (!param_file)
             return;
-        // TODO
-        // param_file << "Parameter\n";
-        // auto max_globals = layers_global_pars.size();
-        // for (decltype(max_globals) i = 0; i < max_globals; ++i) {
-        //     // if (layers_global_pars[i].is_free())  {}
-        //     layers_global_pars[i].dump_pede_param(i, param_file);
-        // }
+
+        param_file << "Parameter\n";
+        auto max_globals = global_parameters_list.size();
+        for (decltype(max_globals) i = 0; i < max_globals; ++i) {
+            // if (layers_global_pars[i].is_free())  {}
+            global_parameters_list[i]->dump_pede_param(param_file);
+        }
     }
 
     auto print(bool /*use_deg*/) const -> void
