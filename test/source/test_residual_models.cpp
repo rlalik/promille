@@ -57,10 +57,10 @@ TEST(StrawResiduals, StsDerivatives)
 
         derivs.set_params(d.first.first[6], d.first.first[7], d.first.first[8], d.first.first[9], d.first.first[10], d.first.first[11]);
 
-        derivs.get_residual(XYZPoint(d.first.second[3], d.first.second[4], 0),
-                            XYZVector(d.first.second[5], d.first.second[6], 1),
-                            XYZPoint(d.first.second[0], d.first.second[1], d.first.second[2]),
-                            XYZVector(0, 0, 1));
+        derivs.residual(XYZPoint(d.first.second[3], d.first.second[4], 0),
+                        XYZVector(d.first.second[5], d.first.second[6], 1),
+                        XYZPoint(d.first.second[0], d.first.second[1], d.first.second[2]),
+                        XYZVector(0, 0, 1));
 
         EXPECT_NEAR(derivs.global_derivative(1), d.second[0], accuracy);
         EXPECT_NEAR(derivs.global_derivative(2), d.second[1], accuracy);

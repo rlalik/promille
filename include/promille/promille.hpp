@@ -24,13 +24,13 @@ struct residual_model_base
     static const size_t n_globals = Nglobal;
     static const size_t n_locals = Nlocal;
 
-    auto get_residual(PointType base, VectorType track) -> T
+    auto residual(PointType base, VectorType track) -> T
     {
         calc_derivatives(base, track);
         return calc_residual(base, track);
     }
 
-    auto get_residual(PointType base, VectorType track, ExtraArgs... args) -> T
+    auto residual(PointType base, VectorType track, ExtraArgs... args) -> T
     {
         update_extras(args...);
         calc_derivatives(base, track);
@@ -175,27 +175,34 @@ auto operator<<(std::ostream& ofs, const promille::parameter_state<T>& rhs) -> s
     return ofs << std::setw(6) << rhs.ptr->id << rhs.kind << std::setw(12) << rhs.ptr->value << "  " << rhs.ptr->description;
 }
 
-template<typename T, std::size_t Nglobal, std::size_t Nlocal>
+template<typename T, typename ResidualModel>
 struct measurement_plane
 {
+    ResidualModel model;
+    static const size_t Nglobal = decltype(model)::n_globals;
+    static const size_t Nlocal = decltype(model)::n_locals;
+
     std::array<parameter_state<global_parameter<T>>, Nglobal> globals;
     std::array<parameter_state<local_parameter<T>>, Nlocal> locals;
 
+    template<typename... Ts>
     measurement_plane(std::array<parameter_state<global_parameter<T>>, Nglobal>&& g,
-                      std::array<parameter_state<local_parameter<T>>, Nlocal>&& l)
+                      std::array<parameter_state<local_parameter<T>>, Nlocal>&& l,
+                      Ts... param_global_values)
         : globals(std::move(g))
         , locals(std::move(l))
+        , model(param_global_values...)
     {
     }
 
     template<typename... StateKind>
-    auto set_globals_configuration(StateKind... kinds) -> measurement_plane<T, Nglobal, Nlocal>&
+    auto set_globals_configuration(StateKind... kinds) -> measurement_plane<T, ResidualModel>&
     {
         set_params_configuration(globals, std::make_index_sequence<sizeof...(StateKind)> {}, kinds...);
         return *this;
     }
 
-    auto set_globals_configuration(const std::array<Kind, Nglobal>& kinds) -> measurement_plane<T, Nglobal, Nlocal>&
+    auto set_globals_configuration(const std::array<Kind, Nglobal>& kinds) -> measurement_plane<T, ResidualModel>&
     {
         for (size_t i = 0; i < kinds.size(); ++i)
             globals[i].kind = kinds[i];
@@ -203,22 +210,26 @@ struct measurement_plane
     }
 
     template<typename... StateKind>
-    auto set_locals_configuration(StateKind... kinds) -> measurement_plane<T, Nglobal, Nlocal>&
+    auto set_locals_configuration(StateKind... kinds) -> measurement_plane<T, ResidualModel>&
     {
         set_params_configuration(locals, std::make_index_sequence<sizeof...(StateKind)> {}, kinds...);
         return *this;
     }
 
-    auto set_locals_configuration(const std::array<Kind, Nlocal>& kinds) -> measurement_plane<T, Nglobal, Nlocal>&
+    auto set_locals_configuration(const std::array<Kind, Nlocal>& kinds) -> measurement_plane<T, ResidualModel>&
     {
         for (size_t i = 0; i < kinds.size(); ++i)
             locals[i].kind = kinds[i];
         return *this;
     }
 
+    auto get_model() const -> const ResidualModel& { return model; }
+
+    auto get_model() -> ResidualModel& { return model; }
+
   private:
     template<typename Param, typename... StateKind, std::size_t... Is>
-    auto set_params_configuration(Param& p, std::index_sequence<Is...> const&, StateKind... kinds) -> measurement_plane<T, Nglobal, Nlocal>&
+    auto set_params_configuration(Param& p, std::index_sequence<Is...> const&, StateKind... kinds) -> measurement_plane<T, ResidualModel>&
     {
         ((set_param_kind(p, Is, kinds)), ...);
         return *this;
@@ -231,7 +242,7 @@ struct measurement_plane
     }
 };
 
-template<typename ResiduaModel>
+template<typename ResidualModel>
 class promille
 {
   public:
@@ -240,10 +251,10 @@ class promille
     using global_param_type_t = global_parameter<main_type>;
     using local_param_type_t = local_parameter<main_type>;
 
-    using measurement_plane_t = measurement_plane<main_type, ResiduaModel::n_globals, ResiduaModel::n_locals>;
+    using measurement_plane_t = measurement_plane<main_type, ResidualModel>;
     using measurement_plane_array_t = std::vector<measurement_plane_t>;
 
-    using local_parameter_array_t = std::array<std::unique_ptr<local_param_type_t>, ResiduaModel::n_locals>;
+    using local_parameter_array_t = std::array<std::unique_ptr<local_param_type_t>, ResidualModel::n_locals>;
 
   public:
     /** The Mille Wrapper class.
@@ -256,7 +267,7 @@ class promille
     promille(const char* prefix, const char* outFileName, bool asBinary = true, bool writeZero = false)
         : mille_prefix(prefix)
         , mille(outFileName, asBinary, writeZero)
-        , local_parameters_list(make_locals(std::make_index_sequence<ResiduaModel::n_locals> {}))
+        , local_parameters_list(make_locals(std::make_index_sequence<ResidualModel::n_locals> {}))
     {
     }
 
@@ -293,13 +304,12 @@ class promille
     template<typename... GlobalIds>
     auto add_plane(size_t plane_id, GlobalIds... gids) -> measurement_plane_t&
     {
-        // static_assert(sizeof...(gids) == ResiduaModel::n_globals, "Wrong number of global parameters ids");
+        // static_assert(sizeof...(gids) == ResidualModel::n_globals, "Wrong number of global parameters ids");
 
         plane_globals_map[plane_id] = plane_configuration.size();
         plane_configuration.emplace_back(make_plane_globals_state(gids...),
-                                         make_plane_locals_state(std::make_index_sequence<ResiduaModel::n_locals> {}));
-
-        global_planes.push_back(ResiduaModel(global_parameters_map.at(gids)->value...));
+                                         make_plane_locals_state(std::make_index_sequence<ResidualModel::n_locals> {}),
+                                         global_parameters_map.at(gids)->value...);
 
         return plane_configuration.back();
     }
@@ -320,15 +330,15 @@ class promille
     template<typename... LocalExtraPars>
     auto add_measurement(size_t plane_id, float sigma, LocalExtraPars... args) -> void
     {
-        auto& residua_model = global_planes[plane_globals_map.at(plane_id)];
+        auto& residua_model = plane_configuration[plane_globals_map.at(plane_id)].get_model();
 
-        auto residuum = residua_model.get_residual(args...);
+        auto residuum = residua_model.residual(args...);
 
-        std::array<float, ResiduaModel::n_globals> global_derivatives;
-        std::array<int, ResiduaModel::n_globals> global_deriv_index;
+        std::array<float, ResidualModel::n_globals> global_derivatives;
+        std::array<int, ResidualModel::n_globals> global_deriv_index;
         int global_cnt = 0;
 
-        for (size_t i = 0; i < ResiduaModel::n_globals; ++i) {
+        for (size_t i = 0; i < ResidualModel::n_globals; ++i) {
             const auto& param_state = plane_configuration[plane_globals_map.at(plane_id)].globals[i];
 
             if (param_state.is_free()) {
@@ -338,10 +348,10 @@ class promille
             }
         }
 
-        std::array<float, ResiduaModel::n_locals> local_derivatives;
+        std::array<float, ResidualModel::n_locals> local_derivatives;
         int local_cnt = 0;
 
-        for (size_t i = 0; i < ResiduaModel::n_locals; ++i) {
+        for (size_t i = 0; i < ResidualModel::n_locals; ++i) {
             const auto& param_state = plane_configuration[plane_globals_map.at(plane_id)].locals[i];
 
             if (param_state.is_free()) {
@@ -512,7 +522,6 @@ class promille
 
     local_parameter_array_t local_parameters_list;
 
-    std::vector<ResiduaModel> global_planes;
     std::map<size_t, size_t> plane_globals_map;
 
     measurement_plane_array_t plane_configuration;
