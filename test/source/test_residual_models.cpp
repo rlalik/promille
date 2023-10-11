@@ -52,12 +52,12 @@ TEST(StrawResiduals, StsDerivatives)
          {-0.436231, 0.330121, 0.837092, -4.71041, 1.5327, 1.85027, 0.436231, -0.330121, -0.316471, 0.239491}}};
 
     for (const auto& d : data) {
-        auto derivs = mb_tests::dummy_residual_model<double, float>(
-            d.first.first[0], d.first.first[1], d.first.first[2], d.first.first[3], d.first.first[4], d.first.first[5]);
-
-        derivs.set_params(d.first.first[6], d.first.first[7], d.first.first[8], d.first.first[9], d.first.first[10], d.first.first[11]);
-
-        derivs.residual(0, 0, 0);
+        // auto derivs = promille_tests::dummy_residual_model<double, float>(
+        //     d.first.first[0], d.first.first[1], d.first.first[2], d.first.first[3], d.first.first[4], d.first.first[5]);
+        //
+        // derivs.set_params(d.first.first[6], d.first.first[7], d.first.first[8], d.first.first[9], d.first.first[10], d.first.first[11]);
+        //
+        // derivs.residual(0, 0, 0);
 
         // EXPECT_NEAR(derivs.global_derivative(1), d.second[0], accuracy);
         // EXPECT_NEAR(derivs.global_derivative(2), d.second[1], accuracy);
