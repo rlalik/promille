@@ -18,23 +18,16 @@
 namespace promille
 {
 
-template<typename T, std::size_t Nglobals, std::size_t Nlocals, typename PointType, typename VectorType, typename... ExtraArgs>
+template<typename T, std::size_t Nglobals, std::size_t Nlocals, typename... TracksParamArgs>
 struct residual_model_base
 {
     static const size_t n_globals = Nglobals;
     static const size_t n_locals = Nlocals;
 
-    auto residual(PointType base, VectorType track) -> T
+    auto residual(TracksParamArgs... params) -> T
     {
-        calc_derivatives(base, track);
-        return calc_residual(base, track);
-    }
-
-    auto residual(PointType base, VectorType track, ExtraArgs... args) -> T
-    {
-        update_extras(args...);
-        calc_derivatives(base, track);
-        return calc_residual(base, track);
+        calc_derivatives(params...);
+        return calc_residual(params...);
     }
 
     auto global_derivative(size_t variable_number) const -> T
@@ -82,9 +75,8 @@ struct residual_model_base
     std::array<T, Nglobals> global_derivatives {0};
     std::array<T, Nlocals> local_derivatives {0};
 
-    virtual auto update_extras(ExtraArgs... args) -> void {};
-    virtual auto calc_residual(PointType base, VectorType track) -> T = 0;
-    virtual auto calc_derivatives(PointType base, VectorType track) -> void = 0;
+    virtual auto calc_residual(TracksParamArgs... params) -> T = 0;
+    virtual auto calc_derivatives(TracksParamArgs... params) -> void = 0;
 };
 
 enum class Kind

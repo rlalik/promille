@@ -22,7 +22,7 @@ using ROOT::Math::XYZPoint;
 using ROOT::Math::XYZVector;
 
 template<typename T, typename U, size_t Ng = 3, size_t Nl = 2>
-struct dummy_residual_model final : promille::residual_model_base<T, Ng, Nl, U, U, U>
+struct dummy_residual_model final : promille::residual_model_base<T, Ng, Nl, U, U>
 {
     // gloal translational corrections
     T gp1 {0};
@@ -35,15 +35,6 @@ struct dummy_residual_model final : promille::residual_model_base<T, Ng, Nl, U, 
         , gp3(gp3)
     {
     }
-
-    auto set_params(T ax, T ay, T az, T alpha, T beta, T gamma) -> void
-    {
-        // a_x = ax;
-        // a_y = ay;
-        // a_z = az;
-    }
-
-    auto update_extras(U /* unused */) -> void override {}
 
     auto calc_residual(U track_base, U track_dir) -> T override { return 100; }
 
