@@ -24,11 +24,7 @@ struct residual_model_base
     static const size_t n_globals = Nglobals;
     static const size_t n_locals = Nlocals;
 
-    auto residual(TracksParamArgs... params) -> T
-    {
-        calc_derivatives(params...);
-        return calc_residual(params...);
-    }
+    auto residual(TracksParamArgs... params) -> T { return calc_model(params...); }
 
     auto global_derivative(size_t variable_number) const -> T
     {
@@ -75,8 +71,7 @@ struct residual_model_base
     std::array<T, Nglobals> global_derivatives {0};
     std::array<T, Nlocals> local_derivatives {0};
 
-    virtual auto calc_residual(TracksParamArgs... params) -> T = 0;
-    virtual auto calc_derivatives(TracksParamArgs... params) -> void = 0;
+    virtual auto calc_model(TracksParamArgs... params) -> T = 0;
 };
 
 enum class Kind

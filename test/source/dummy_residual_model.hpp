@@ -36,9 +36,7 @@ struct dummy_residual_model final : promille::residual_model_base<T, Ng, Nl, U, 
     {
     }
 
-    auto calc_residual(U track_base, U track_dir) -> T override { return 100; }
-
-    auto calc_derivatives(U track_base, U track_dir) -> void override
+    auto calc_model(U track_base, U track_dir) -> T override
     {
         auto b_x = track_base;
         auto t_x = track_dir;
@@ -52,6 +50,8 @@ struct dummy_residual_model final : promille::residual_model_base<T, Ng, Nl, U, 
         this->template set_local_derivative<0>() = 0.1;
 
         this->template set_local_derivative<1>() = 0.2;
+
+        return 100;
     }
 };
 
