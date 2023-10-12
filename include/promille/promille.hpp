@@ -18,60 +18,68 @@
 namespace promille
 {
 
-template<typename T, std::size_t Nglobals, std::size_t Nlocals, typename... TracksParamArgs>
+template<typename T, size_t Nlocals>
 struct residual_model_base
 {
-    static const size_t n_globals = Nglobals;
+    const size_t n_globals;
     static const size_t n_locals = Nlocals;
 
-    auto residual(TracksParamArgs... params) -> T { return calc_model(params...); }
+    virtual auto residual() const -> T = 0;
 
     auto global_derivative(size_t variable_number) const -> T
     {
-        assert(variable_number < Nglobals);
+        assert(variable_number < n_globals);
         return global_derivatives.at(variable_number);
     }
 
     auto local_derivative(size_t variable_number) const -> T
     {
-        assert(variable_number < Nlocals);
+        assert(variable_number < n_locals);
         return local_derivatives.at(variable_number);
     }
 
     auto print() const -> void
     {
-        for (size_t i = 0; i < Nglobals; ++i) {
-            std::cout << " Global derivative " << i + 1 << " = " << global_derivative(i) << '\n';
+        std::cout << "MODEL: Ng = " << n_globals << "  Nl = " << n_locals << '\n';
+        std::cout << "drd_globals: ";
+        for (size_t i = 0; i < n_globals; ++i) {
+            std::cout << std::setw(12) << global_derivative(i);
         }
-
-        for (size_t i = 0; i < Nlocals; ++i) {
-            std::cout << " Local derivative " << i + 1 << " = " << local_derivative(i) << '\n';
+        std::cout << "\ndrd_locals : ";
+        for (size_t i = 0; i < n_locals; ++i) {
+            std::cout << std::setw(12) << local_derivative(i);
         }
+        std::cout << '\n';
     }
+
+    virtual ~residual_model_base() = default;
 
   protected:
     template<size_t variable_number>
     auto set_global_derivative() -> T&
     {
-        static_assert(variable_number < Nglobals, "Global parameter index out of bounds");
+        static_assert(variable_number < n_globals, "Global parameter index out of bounds");
         return global_derivatives.at(variable_number);
     }
 
     template<size_t variable_number>
     auto set_local_derivative() -> T&
     {
-        static_assert(variable_number < Nlocals, "Local parameter index out of bounds");
+        static_assert(variable_number < n_locals, "Local parameter index out of bounds");
         return local_derivatives.at(variable_number);
     }
 
-  protected:
-    constexpr residual_model_base() = default;
+    residual_model_base() = delete;
+
+    residual_model_base(size_t nglobals)
+        : n_globals(nglobals)
+        , global_derivatives(n_globals)
+    {
+    }
 
   private:
-    std::array<T, Nglobals> global_derivatives {0};
-    std::array<T, Nlocals> local_derivatives {0};
-
-    virtual auto calc_model(TracksParamArgs... params) -> T = 0;
+    std::vector<T> global_derivatives;
+    std::array<T, Nlocals> local_derivatives;
 };
 
 enum class Kind
@@ -113,10 +121,7 @@ struct global_parameter
 
     operator T() const { return value; }
 
-    auto make_state_from_parameter(Kind kind = Kind::FIXED) -> parameter_state<global_parameter<T>>
-    {
-        return parameter_state<global_parameter<T>>(this, kind);
-    }
+    auto make_state_from_parameter(Kind kind = Kind::FIXED) -> parameter_state<T> { return parameter_state<T>(this, kind); }
 
     auto dump_pede_param(std::ostream& ofs) -> void
     {
@@ -131,49 +136,16 @@ auto operator<<(std::ostream& ofs, const promille::global_parameter<T>& rhs) -> 
 }
 
 template<typename T>
-struct local_parameter
-{
-    using type = T;
-
-    size_t id;
-    std::string description;
-    bool is_anywere_free {false};
-
-    local_parameter(size_t id, std::string description = "")
-        : id(id)
-        , description(std::move(description))
-    {
-    }
-
-    local_parameter(const local_parameter&) = default;
-    local_parameter(local_parameter&&) = default;
-
-    auto operator=(const local_parameter&) = delete;
-    auto operator=(local_parameter&&) = delete;
-
-    auto make_state_from_parameter(Kind kind = Kind::FREE) -> parameter_state<local_parameter<T>>
-    {
-        return parameter_state<local_parameter<T>>(this, kind);
-    }
-};
-
-template<typename T>
-auto operator<<(std::ostream& ofs, const promille::local_parameter<T>& rhs) -> std::ostream&
-{
-    return ofs << std::setw(6) << rhs.id << "  " << rhs.description;
-}
-
-template<typename T>
 struct parameter_state
 {
   private:
-    T* ptr;
+    global_parameter<T>* ptr;
     Kind kind;
 
   public:
-    explicit constexpr parameter_state(T* ptr, Kind kind = Kind::FREE)
-        : ptr(ptr)
-        , kind(kind)
+    explicit constexpr parameter_state(global_parameter<T>* parameter_ptr, Kind parameter_kind = Kind::FREE)
+        : ptr(parameter_ptr)
+        , kind(parameter_kind)
     {
     }
 
@@ -183,13 +155,13 @@ struct parameter_state
     auto operator=(const parameter_state&) = delete;
     auto operator=(parameter_state&&) = delete;
 
-    auto get() -> T& { return *ptr; }
+    auto get() -> global_parameter<T>& { return *ptr; }
 
-    auto get() const -> const T& { return *ptr; }
+    auto get() const -> const global_parameter<T>& { return *ptr; }
 
     auto get_kind() -> Kind { return kind; }
 
-    auto get_kind() const -> const Kind { return kind; }
+    auto get_kind() const -> Kind { return kind; }
 
     auto set_kind(Kind value) -> void
     {
@@ -212,58 +184,62 @@ auto operator<<(std::ostream& ofs, const promille::parameter_state<_T>& rhs) -> 
     return ofs << std::setw(6) << rhs.ptr->id << rhs.kind << std::setw(12) << rhs.ptr->value << "  " << rhs.ptr->description;
 }
 
-template<typename T, size_t Nglobals, size_t Nlocals>
+template<typename T, size_t Nlocals>
 struct alignment_plane
 {
-    static const size_t n_globals = Nglobals;
-    static const size_t n_locals = Nlocals;
+    const size_t n_globals;
+    const size_t n_locals;
 
-    std::array<parameter_state<global_parameter<T>>, Nglobals> globals;
-    std::array<parameter_state<local_parameter<T>>, Nlocals> locals;
+    std::vector<parameter_state<T>> globals;
+    std::array<Kind, Nlocals> locals;
 
-    template<typename... Ts>
-    alignment_plane(std::array<parameter_state<global_parameter<T>>, Nglobals>&& g,
-                    std::array<parameter_state<local_parameter<T>>, Nlocals>&& l)
-        : globals(std::move(g))
-        , locals(std::move(l))
+    template<typename... GlobalsIds>
+    alignment_plane(GlobalsIds... globals_ids)
+        : n_globals(sizeof...(globals_ids))
+        , n_locals(Nlocals)
+        , globals({globals_ids...})
     {
     }
 
     alignment_plane(const alignment_plane&) = default;
 
     template<typename... StateKind>
-    auto set_globals_configuration(StateKind... kinds) -> alignment_plane<T, Nglobals, Nlocals>&
+    auto set_globals_configuration(StateKind... kinds) -> alignment_plane<T, Nlocals>&
     {
-        static_assert(sizeof...(kinds) == Nglobals, "Number of Kinds values do not match global parameters.");
+        // static_assert(sizeof...(kinds) == Nglobals, "Number of Kinds values do not match global parameters.");
+
+        assert(sizeof...(kinds) == n_globals);
 
         set_params_configuration(globals, std::make_index_sequence<sizeof...(StateKind)> {}, kinds...);
         return *this;
     }
 
-    auto set_globals_configuration(const std::array<Kind, Nglobals>& kinds) -> alignment_plane<T, Nglobals, Nlocals>&
+    auto set_globals_configuration(const std::vector<Kind>& kinds) -> alignment_plane<T, Nlocals>&
     {
+        assert(kinds.size() == n_globals);
+
         for (size_t i = 0; i < kinds.size(); ++i)
             globals[i].set_kind(kinds[i]);
         return *this;
     }
 
     template<typename... StateKind>
-    auto set_locals_configuration(StateKind... kinds) -> alignment_plane<T, Nglobals, Nlocals>&
+    auto set_locals_configuration(StateKind... kinds) -> alignment_plane<T, Nlocals>&
     {
-        set_params_configuration(locals, std::make_index_sequence<sizeof...(StateKind)> {}, kinds...);
+        // set_params_configuration(locals, std::make_index_sequence<sizeof...(StateKind)> {}, kinds...);
+        locals = {kinds...};
         return *this;
     }
 
-    auto set_locals_configuration(const std::array<Kind, Nlocals>& kinds) -> alignment_plane<T, Nglobals, Nlocals>&
+    auto set_locals_configuration(const std::array<Kind, Nlocals>& kinds) -> alignment_plane<T, Nlocals>&
     {
-        for (size_t i = 0; i < kinds.size(); ++i)
-            locals[i].set_kind(kinds[i]);
+        locals = kinds;
         return *this;
     }
 
   private:
     template<typename Param, typename... StateKind, std::size_t... Is>
-    auto set_params_configuration(Param& p, std::index_sequence<Is...> const&, StateKind... kinds) -> alignment_plane<T, Nglobals, Nlocals>&
+    auto set_params_configuration(Param& p, std::index_sequence<Is...> const&, StateKind... kinds) -> alignment_plane<T, Nlocals>&
     {
         ((set_param_kind(p, Is, kinds)), ...);
         return *this;
@@ -272,83 +248,75 @@ struct alignment_plane
     template<typename Param>
     auto set_param_kind(Param& p, size_t idx, Kind kind) -> void
     {
-        p.at(idx).set_kind(kind);
+        p.at(idx) = kind;
     }
 };
 
-template<typename AlignmentPlane, typename ResidualModel>
+template<typename T, typename AlignmentPlane, std::size_t Nlocals>
 class measurement_plane
 {
   private:
     AlignmentPlane ptr_alignment;
-    ResidualModel ptr_model;
+    std::unique_ptr<residual_model_base<T, Nlocals>> ptr_model;
 
   public:
-    measurement_plane(AlignmentPlane alignment_ptr, ResidualModel residual_ptr)
+    template<typename ResidualModel>
+    measurement_plane(AlignmentPlane alignment_ptr, ResidualModel model)
         : ptr_alignment(alignment_ptr)
-        , ptr_model(residual_ptr)
+        , ptr_model(std::make_unique<ResidualModel>(model))
     {
-        static_assert(AlignmentPlane::n_globals == ResidualModel::n_globals, "Number of globals parameters mismatch.");
-        static_assert(AlignmentPlane::n_locals == ResidualModel::n_locals, "Number of locals parameters mismatch.");
-
-        // std::cout << "GLOBAL STATE with alignment " << ptr_alignment << " and model " << ptr_model << '\n';
+        assert(alignment_ptr.n_globals == model.n_globals);
     }
 
     template<typename... StateKind>
-    auto set_globals_configuration(StateKind... kinds) -> measurement_plane<AlignmentPlane, ResidualModel>&
+    auto set_globals_configuration(StateKind... kinds) -> measurement_plane<T, AlignmentPlane, Nlocals>&
     {
-        static_assert(sizeof...(kinds) == AlignmentPlane::n_globals, "Number of Kinds values do not match global parameters.");
+        assert(ptr_alignment.n_globals == sizeof...(kinds));
 
         ptr_alignment.set_globals_configuration(kinds...);
         return *this;
     }
 
-    auto set_globals_configuration(const std::array<Kind, AlignmentPlane::n_globals>& kinds)
-        -> measurement_plane<AlignmentPlane, ResidualModel>&
+    template<std::size_t Nglobals>
+    auto set_globals_configuration(const std::array<Kind, Nglobals>& kinds) -> measurement_plane<T, AlignmentPlane, Nlocals>&
     {
-        ptr_alignment.set_globals_configuration(kinds);
+        assert(Nglobals == ptr_alignment.globals.size());
+
+        for (size_t i = 0; i < Nglobals; ++i)
+            ptr_alignment.globals[i] = kinds[i];
+
         return *this;
     }
 
     template<typename... StateKind>
-    auto set_locals_configuration(StateKind... kinds) -> measurement_plane<AlignmentPlane, ResidualModel>&
+    auto set_locals_configuration(StateKind... kinds) -> measurement_plane<T, AlignmentPlane, Nlocals>&
     {
         ptr_alignment.set_locals_configuration(kinds...);
         return *this;
     }
 
-    auto set_locals_configuration(const std::array<Kind, AlignmentPlane::n_locals>& kinds)
-        -> measurement_plane<AlignmentPlane, ResidualModel>&
+    auto set_locals_configuration(const std::array<Kind, Nlocals>& kinds) -> measurement_plane<T, AlignmentPlane, Nlocals>&
     {
         ptr_alignment.set_locals_configuration(kinds);
         return *this;
     }
 
     auto get_alignment() -> AlignmentPlane& { return ptr_alignment; }
-    auto get_model() -> ResidualModel& { return ptr_model; }
+    auto get_model() -> residual_model_base<T, Nlocals>* { return ptr_model.get(); }
 
     auto get_alignment() const -> const AlignmentPlane& { return ptr_alignment; }
-    auto get_model() const -> const ResidualModel& { return ptr_model; }
+    auto get_model() const -> const residual_model_base<T, Nlocals>* { return ptr_model.get(); }
 };
 
-template<typename ResidualModel>
+template<std::size_t Nlocals>
 class promille
 {
   public:
     using main_type = float;
-
     using global_param_type_t = global_parameter<main_type>;
-    using local_param_type_t = local_parameter<main_type>;
-
-    using alignment_plane_t = alignment_plane<main_type, ResidualModel::n_globals, ResidualModel::n_locals>;
-    using residual_model_t = ResidualModel;
-    using measurement_plane_t = measurement_plane<alignment_plane_t, residual_model_t>;
-
-    using alignment_plane_array_t = std::vector<alignment_plane_t>;
-    using residual_model_array_t = std::vector<residual_model_t>;
+    using alignment_plane_t = alignment_plane<main_type, Nlocals>;
+    using measurement_plane_t = measurement_plane<main_type, alignment_plane_t, Nlocals>;
     using measurement_plane_array_t = std::vector<measurement_plane_t>;
-
-    using local_parameter_array_t = std::array<std::unique_ptr<local_param_type_t>, ResidualModel::n_locals>;
 
   public:
     /** The Mille Wrapper class.
@@ -361,7 +329,6 @@ class promille
     promille(const char* prefix, const char* outFileName, bool asBinary = true, bool writeZero = false)
         : mille_prefix(prefix)
         , mille(outFileName, asBinary, writeZero)
-        , local_parameters_array(make_locals(std::make_index_sequence<ResidualModel::n_locals> {}))
     {
     }
 
@@ -385,10 +352,10 @@ class promille
      * @param lid local parameter id, should be in range 1 to N where N is number of the local params in the residual model
      * @param description the param description
      */
-    auto set_local_parameter(size_t lid, std::string description) -> void
-    {
-        local_parameters_array.at(lid)->description = std::move(description);
-    }
+    // auto set_local_parameter(size_t lid, std::string description) -> void
+    // {
+    //     local_parameters_array.at(lid)->description = std::move(description);
+    // }
 
     /**
      * Add measurement plane global parameters configuration.
@@ -398,17 +365,15 @@ class promille
      * @return measurement plane object
      */
 
-    template<typename... GlobalIds>
+    template<typename ResidualModel, typename... GlobalIds>
     auto add_plane(size_t plane_id, GlobalIds... globals_ids) -> measurement_plane_t&
     {
-        // static_assert(sizeof...(gids) == ResidualModel::n_globals, "Wrong number of global parameters ids");
+        static_assert(Nlocals == ResidualModel::n_locals, "Wrong number of local parameters in model");
 
         plane_indexes_map[plane_id] = measurement_plane_array.size();
 
-        measurement_plane_array.emplace_back(
-            alignment_plane_t(make_plane_globals_state(globals_ids...),
-                              make_plane_locals_state(std::make_index_sequence<ResidualModel::n_locals> {})),
-            residual_model_t(global_parameters_map[globals_ids]->value...));
+        measurement_plane_array.emplace_back(alignment_plane_t(global_parameters_map[globals_ids]->make_state_from_parameter()...),
+                                             ResidualModel(global_parameters_map[globals_ids]->value...));
 
         return measurement_plane_array.back();
     }
@@ -426,35 +391,36 @@ class promille
      * @param s_y wire position y
      * @param s_z wire position z
      */
-    template<typename... LocalExtraPars>
-    auto add_measurement(size_t plane_id, float sigma, LocalExtraPars... args) -> void
+    auto add_measurement(size_t plane_id, float sigma) -> void
     {
         auto& the_plane = measurement_plane_array[plane_indexes_map[plane_id]];
 
-        auto residuum = the_plane.get_model().residual(args...);
+        auto model = the_plane.get_model();
+        auto residuum = model->residual();
 
-        std::array<float, ResidualModel::n_globals> global_derivatives;
-        std::array<int, ResidualModel::n_globals> global_deriv_index;
+        std::vector<float> global_derivatives(model->n_globals);
+        std::vector<int> global_deriv_index(model->n_globals);
+
         int global_cnt = 0;
 
-        for (size_t i = 0; i < ResidualModel::n_globals; ++i) {
+        for (size_t i = 0; i < model->n_globals; ++i) {
             const auto& param_state = the_plane.get_alignment().globals[i];
 
             if (param_state.is_free()) {
-                global_derivatives[global_cnt] = the_plane.get_model().global_derivative(i);
+                global_derivatives[global_cnt] = the_plane.get_model()->global_derivative(i);
                 global_deriv_index[global_cnt] = param_state.get().id;
                 global_cnt++;
             }
         }
 
-        std::array<float, ResidualModel::n_locals> local_derivatives;
+        std::vector<float> local_derivatives(model->n_locals);
         int local_cnt = 0;
 
-        for (size_t i = 0; i < ResidualModel::n_locals; ++i) {
+        for (size_t i = 0; i < model->n_locals; ++i) {
             const auto& param_state = the_plane.get_alignment().locals[i];
 
-            if (param_state.is_free()) {
-                local_derivatives[local_cnt] = the_plane.get_model().local_derivative(i);
+            if (param_state == Kind::FREE) {
+                local_derivatives[local_cnt] = the_plane.get_model()->local_derivative(i);
                 local_cnt++;
             }
         }
@@ -463,7 +429,7 @@ class promille
             std::cout << " --- GLOBALS ID " << plane_id << " ---\n";
         }
         if (verbose > 1) {
-            the_plane.get_model().print();
+            the_plane.get_model()->print();
         }
         if (verbose) {
             static const size_t value_width = 12;
@@ -478,11 +444,16 @@ class promille
             std::cout << std::left << '\n';
         }
         //
-        mille.mille(
-            local_cnt, local_derivatives.data(), global_cnt, global_derivatives.data(), global_deriv_index.data(), (float)residuum, sigma);
+        mille.mille(local_cnt,
+                    local_derivatives.data(),
+                    global_cnt,
+                    global_derivatives.data(),
+                    global_deriv_index.data(),
+                    static_cast<float>(residuum),
+                    sigma);
     }
 
-    /* Call Mille::end()
+    /** Call Mille::end()
      */
     auto end() -> void
     {
@@ -492,7 +463,7 @@ class promille
         mille.end();
     }
 
-    /* Call Mille::kill();
+    /** Call Mille::kill();
      */
     auto kill() -> void
     {
@@ -529,13 +500,6 @@ class promille
         }
         std::cout << bar << '\n';
 
-        std::cout << "Local parameters" << '\n';
-        std::cout << bar << '\n';
-        for (const auto& par : local_parameters_array) {
-            std::cout << *par << '\n';
-        }
-        std::cout << bar << '\n';
-
         std::cout << "Measurement planes (" << plane_indexes_map.size() << ")\n";
         std::cout << bar << '\n';
         std::cout << std::right;
@@ -549,37 +513,14 @@ class promille
 
             std::cout << "  | LOCAL:";
 
-            for (const auto id : measurement_plane_array[plane_ids_it.second].get_alignment().locals) {
-                std::cout << std::setw(5) << id.get().id << id.get_kind();
+            for (const auto kind : measurement_plane_array[plane_ids_it.second].get_alignment().locals) {
+                std::cout << std::setw(5) << kind;
             }
             std::cout << '\n';
+            measurement_plane_array[plane_ids_it.second].get_model()->print();
         }
         std::cout << std::left;
         std::cout << bar << '\n';
-
-        // constexpr auto width = 14;
-        // auto bar = std::string(width * 7, '=');
-        // std::cout << bar << '\n';
-        // std::cout << std::left << std::setw(width) << "Layer" << std::setw(width) << "Gx" << std::setw(width) << "Gy" << std::setw(width)
-        //           << "GzZ" << std::setw(width) << "Ga" << std::setw(width) << "Gb" << std::setw(width) << "Gc" << '\n';
-        // std::cout << bar << '\n';
-        //
-        // auto cnt = 1;
-        // for (const auto& global_par : layers_global_pars) {
-        //     std::cout << std::setw(width) << cnt++ << global_par.gx() << global_par.gy() << global_par.gz() << global_par.ga()
-        //               << global_par.gb() << global_par.gc() << '\n';
-        // }
-        //
-        // std::cout << bar << '\n';
-        //
-        // cnt = 1;
-        // for (const auto& local_par : layers_local_pars) {
-        //     std::cout << std::setw(width) << cnt++ << local_par.lx0() << local_par.ly0() << local_par.ltx() << local_par.lty() << '\n';
-        //     ;
-        // }
-        //
-        // std::cout << bar << '\n';
-        // std::cout << std::right;
     }
 
     auto get_mille() -> Mille& { return mille; }
@@ -593,24 +534,10 @@ class promille
         return {global_parameters_map[globals_ids]->make_state_from_parameter()...};
     }
 
-    template<std::size_t... Is>
-    auto make_plane_locals_state(std::index_sequence<Is...> int_seq) -> decltype(alignment_plane_t::locals)
-    {
-        return {local_parameters_array[Is]->make_state_from_parameter()...};
-    }
-
-    template<typename Is, Is... ints>
-    auto make_locals(std::integer_sequence<Is, ints...> /* unused */) -> local_parameter_array_t
-    {
-        return {std::make_unique<local_parameter<main_type>>(ints)...};
-    }
-
     std::string mille_prefix;
 
     std::vector<std::unique_ptr<global_param_type_t>> global_parameters_array;
     std::map<size_t, global_param_type_t*> global_parameters_map;
-
-    local_parameter_array_t local_parameters_array;
 
     std::map<size_t, size_t> plane_indexes_map;
     measurement_plane_array_t measurement_plane_array;

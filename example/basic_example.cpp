@@ -74,12 +74,12 @@ auto main(int argc, char* argv[]) -> int
         putchar('\n');
     }
 
-    promille::promille<promille_tests::dummy_residual_model<float, float>> mille("test_", "test");
+    promille::promille<2> mille("test_", "test");
 
     mille.set_verbose(2);
 
-    mille.set_local_parameter(0, "Tx");
-    mille.set_local_parameter(1, "Ty");
+    // mille.set_local_parameter(0, "Tx");
+    // mille.set_local_parameter(1, "Ty");
 
     // FIRST WAY: define parameters and pass their indices to add_plane()
     // Useful, if these params must be shared between different measurement planes.
@@ -87,16 +87,16 @@ auto main(int argc, char* argv[]) -> int
     mille.add_global_parameter(12, -50, "Rb1");
     mille.add_global_parameter(13, -60, "Rc1");
 
-    mille.add_plane(1, 11, 12, 13)
+    mille.add_plane<promille_tests::dummy_residual_model<float, float>>(1, 11, 12, 13)
         .set_globals_configuration(promille::Kind::FREE, promille::Kind::FIXED, promille::Kind::FIXED)
         .set_locals_configuration(promille::Kind::FREE, promille::Kind::FIXED);
 
     // SECOND WAY: define parameters inline, useful if not needed anymore
     mille
-        .add_plane(2,
-                   mille.add_global_parameter(21, -40, "Ra2"),
-                   mille.add_global_parameter(22, -50, "Rb2"),
-                   mille.add_global_parameter(23, -60, "Rc2"))
+        .add_plane<promille_tests::dummy_residual_model<float, float>>(2,
+                                                                       mille.add_global_parameter(21, -40, "Ra2"),
+                                                                       mille.add_global_parameter(22, -50, "Rb2"),
+                                                                       mille.add_global_parameter(23, -60, "Rc2"))
         .set_globals_configuration(promille::Kind::FIXED, promille::Kind::FREE, promille::Kind::FIXED)
         .set_locals_configuration(promille::Kind::FREE, promille::Kind::FIXED);
 
@@ -107,10 +107,10 @@ auto main(int argc, char* argv[]) -> int
     };
 
     mille
-        .add_plane(3,
-                   mille.add_global_parameter(31, -40, "Ra3"),
-                   mille.add_global_parameter(32, -50, "Rb3"),
-                   mille.add_global_parameter(33, -60, "Rc3"))
+        .add_plane<promille_tests::dummy_residual_model<float, float>>(3,
+                                                                       mille.add_global_parameter(31, -40, "Ra3"),
+                                                                       mille.add_global_parameter(32, -50, "Rb3"),
+                                                                       mille.add_global_parameter(33, -60, "Rc3"))
         .set_globals_configuration(plane_3_global_kinds)
         .set_locals_configuration(plane_3_local_kinds);
 
@@ -119,13 +119,13 @@ auto main(int argc, char* argv[]) -> int
     mille.add_global_parameter(42, -50, "Rb4");
     mille.add_global_parameter(43, -60, "Rc4");
 
-    mille.add_plane(4, 41, 42, 43)
+    mille.add_plane<promille_tests::dummy_residual_model<float, float>>(4, 41, 42, 43)
         .set_globals_configuration(promille::Kind::FREE, promille::Kind::FIXED, promille::Kind::FREE)
         .set_locals_configuration(promille::Kind::FREE, promille::Kind::FIXED);
 
     mille.print(true);
 
-    mille.add_measurement(1, 0, 0, 0);
+    mille.add_measurement(1, 0);
 
     return 0;
 }

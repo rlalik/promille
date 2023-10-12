@@ -21,8 +21,8 @@ using ROOT::Math::Rotation3D;
 using ROOT::Math::XYZPoint;
 using ROOT::Math::XYZVector;
 
-template<typename T, typename U, size_t Ng = 3, size_t Nl = 2>
-struct dummy_residual_model final : promille::residual_model_base<T, Ng, Nl, U, U>
+template<typename T, typename U, size_t Nl = 2, size_t Ng = 3>
+struct dummy_residual_model final : promille::residual_model_base<T, Nl>
 {
     // gloal translational corrections
     T gp1 {0};
@@ -30,13 +30,16 @@ struct dummy_residual_model final : promille::residual_model_base<T, Ng, Nl, U, 
     T gp3 {0};
 
     dummy_residual_model(T gp1, T gp2, T gp3)
-        : gp1(gp1)
+        : promille::residual_model_base<T, Nl>(Ng)
+        , gp1(gp1)
         , gp2(gp2)
         , gp3(gp3)
     {
     }
 
-    auto calc_model(U track_base, U track_dir) -> T override
+    auto residual() const -> T override { return 100.; }
+
+    auto calc_model(U track_base, U track_dir) -> void
     {
         auto b_x = track_base;
         auto t_x = track_dir;
@@ -51,7 +54,7 @@ struct dummy_residual_model final : promille::residual_model_base<T, Ng, Nl, U, 
 
         this->template set_local_derivative<1>() = 0.2;
 
-        return 100;
+        this->residual = 100;
     }
 };
 
