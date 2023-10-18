@@ -33,11 +33,11 @@ endif()
 # ---- Tests ----
 
 add_executable(promille_test
+  source/test_euler_angles.cpp
   source/test_parameter_state.cpp
   source/test_measurement_plane.cpp
-  source/test_promille.cpp
-  source/test_euler_angles.cpp
   source/test_residual_models.cpp
+  source/test_promille.cpp
 )
 
 target_link_libraries(promille_test PRIVATE ${GTEST_TRG} promille::promille MP2::Mille ROOT::GenVector)

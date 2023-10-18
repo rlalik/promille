@@ -31,10 +31,10 @@ struct euler_base
     }
 
   protected:
-    euler_base(T a1, T a2, T a3)
-        : a1(a1)
-        , a2(a2)
-        , a3(a3)
+    euler_base(T angle_1, T angle_2, T angle_3)
+        : a1(angle_1)
+        , a2(angle_2)
+        , a3(angle_3)
     {
         init_sin_cos();
     }
@@ -77,8 +77,8 @@ struct zyz : euler_base<T>
     using euler_base<T>::c3;
     using euler_base<T>::s3;
 
-    zyz(T a1, T a2, T a3)
-        : euler_base<T>(a1, a2, a3)
+    zyz(T angle_1, T angle_2, T angle_3)
+        : euler_base<T>(angle_1, angle_2, angle_3)
     {
         this->R11 = c1 * c2 * c3 - s1 * s3;
         this->R12 = -(c3 * s1) - c1 * c2 * s3;

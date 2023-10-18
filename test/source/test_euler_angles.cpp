@@ -13,7 +13,7 @@ using ROOT::Math::XYZVector;
 static const double comp_error = 0.00001;
 static const double comp_error_det = 0.00001;
 
-TEST(EulerAngles, ZYZ_angles)
+TEST(EulerAngles, RotationZYZ)
 {
     std::vector<std::pair<std::array<double, 3>, std::pair<std::array<double, 3>, std::array<double, 3>>>> data = {
         // clang-format off
@@ -54,7 +54,7 @@ TEST(EulerAngles, ZYZ_angles)
     }
 }
 
-TEST(EulerAngles, ZYZ_matrix)
+TEST(EulerAngles, MatrixZYZ)
 {
     std::vector<std::pair<std::array<double, 9>, std::pair<std::array<double, 3>, std::array<double, 3>>>> data = {
         // clang-format off
