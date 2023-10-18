@@ -79,8 +79,7 @@ auto main(int argc, char* argv[]) -> int
         putchar('\n');
     }
 
-    Mille m("test");
-    promille::promille mille("test_", &m);
+    promille::promille mille("test_", "test.bin");
 
     mille.set_verbose(2);
 

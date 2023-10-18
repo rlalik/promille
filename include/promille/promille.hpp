@@ -412,9 +412,9 @@ class promille
      * @param asBianry the output file format, see MillePede documentation
      * @param writeZero see MillePede documentation
      */
-    promille(const char* prefix, Mille* mille_ptr)
+    promille(const char* prefix, const char* outFileName, bool asBianry = true, bool writeZero = true)
         : mille_prefix(prefix)
-        , mille(mille_ptr)
+        , mille(Mille(outFileName, asBianry, writeZero))
     {
     }
 
@@ -430,8 +430,7 @@ class promille
             abort();
         }
 
-        global_parameters_array.push_back(std::make_unique<global_param_type_t>(parameter_id, value, std::move(description)));
-        global_parameters_map[parameter_id] = global_parameters_array.back().get();
+        global_parameters_map.emplace(parameter_id, std::make_unique<global_param_type_t>(parameter_id, value, std::move(description)));
         return parameter_id;
     }
 
@@ -462,7 +461,7 @@ class promille
         if (verbose) {
             std::cout << "--------------------\n";
         }
-        mille->end();
+        mille.end();
     }
 
     /** Call Mille::kill();
@@ -472,7 +471,7 @@ class promille
         if (verbose) {
             std::cout << " KILL  KILL  KILL  KILL\n";
         }
-        mille->kill();
+        mille.kill();
     }
 
     auto write_param_file() -> void
@@ -483,10 +482,9 @@ class promille
         }
 
         param_file << "Parameter\n";
-        auto max_globals = global_parameters_array.size();
-        for (decltype(max_globals) i = 0; i < max_globals; ++i) {
-            if (global_parameters_array[i]->is_anywere_free) {
-                global_parameters_array[i]->dump_pede_param(param_file);
+        for (const auto& param : global_parameters_map) {
+            if (param.second->is_anywere_free) {
+                param.second->dump_pede_param(param_file);
             }
         }
     }
@@ -499,26 +497,24 @@ class promille
 
         std::cout << "Global parameters" << '\n';
         std::cout << bar << '\n';
-        for (const auto& par : global_parameters_array) {
-            std::cout << *par << '\n';
+        for (const auto& par : global_parameters_map) {
+            std::cout << *par.second << '\n';
         }
         std::cout << bar << '\n';
     }
 
-    auto get_mille() -> Mille& { return *mille; }
+    auto get_mille() -> Mille& { return mille; }
 
     auto set_verbose(int make_verbose) -> void { verbose = make_verbose; }
 
   private:
     std::string mille_prefix;
 
-    std::vector<std::unique_ptr<global_param_type_t>> global_parameters_array;
-    std::map<size_t, global_param_type_t*> global_parameters_map;
+    std::map<size_t, std::unique_ptr<global_param_type_t>> global_parameters_map;
 
     std::map<size_t, size_t> plane_indexes_map;
-    // measurement_plane_array_t measurement_plane_array;
 
-    Mille* mille;
+    Mille mille;
     int verbose {0};
 };
 
