@@ -253,6 +253,10 @@ struct measurement_plane
     template<typename... ModelExtraArguments>
     auto add_measurement(float sigma, ModelExtraArguments... extra_args) -> measurement_plane<T, ResidualModel>&
     {
+        if constexpr (sizeof...(extra_args)) {
+            residual_model.recalculate(extra_args...);
+        }
+
         auto residuum = residual_model.residual();
 
         std::vector<float> global_derivatives(residual_model.n_globals);
