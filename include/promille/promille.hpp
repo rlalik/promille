@@ -188,8 +188,10 @@ struct measurement_plane
     std::array<Kind, ResidualModel::n_locals> locals_kind;
 
     template<typename... GlobalParameters>
-    measurement_plane(GlobalParameters&... param)
-        : residual_model(param.value...)
+    measurement_plane(Mille* mille_ptr, bool verbose, GlobalParameters&... param)
+        : mille(mille_ptr)
+        , verbose_flag(verbose)
+        , residual_model(param.value...)
         , globals_kind({param.make_parameter_kind()...})
     {
     }
@@ -334,7 +336,7 @@ struct model_planes
     using measurement_plane_array_t = std::vector<measurement_plane_t>;
 
     model_planes(promille<T>* promille_ptr, bool verbose)
-        : mille(promille_ptr)
+        : pro_mille(promille_ptr)
         , verbose_flag(verbose)
     {
     }
@@ -351,7 +353,8 @@ struct model_planes
     {
         static_assert(ResidualModel::n_globals == sizeof...(globals_ids), "Wrong number of local parameters in model");
 
-        auto new_plane = plane_indexes_map.emplace(plane_id, measurement_plane_t(mille->global_parameter(globals_ids)...));
+        auto new_plane = plane_indexes_map.emplace(
+            plane_id, measurement_plane_t(&pro_mille->get_mille(), verbose_flag, pro_mille->global_parameter(globals_ids)...));
 
         if (!new_plane.second)
             throw;
@@ -391,7 +394,7 @@ struct model_planes
   private:
     std::map<size_t, measurement_plane_t> plane_indexes_map;
 
-    promille<T>* mille {nullptr};
+    promille<T>* pro_mille {nullptr};
     bool verbose_flag {false};
 };
 

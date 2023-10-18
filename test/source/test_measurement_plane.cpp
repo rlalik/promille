@@ -10,7 +10,8 @@ TEST(PlaneAndModels, MeasurementPlane)
     auto gp2 = promille::global_parameter<the_type>(22, 0, "GP2");
     auto gp3 = promille::global_parameter<the_type>(23, 0, "GP3");
 
-    auto plane1 = promille::measurement_plane<the_type, promille_tests::dummy_residual_model<the_type, the_type>>(gp1, gp2, gp3);
+    auto plane1 =
+        promille::measurement_plane<the_type, promille_tests::dummy_residual_model<the_type, the_type>>(nullptr, false, gp1, gp2, gp3);
 
     // plane1.print();
 
