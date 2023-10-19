@@ -188,9 +188,8 @@ struct measurement_plane
     std::array<Kind, ResidualModel::n_locals> locals_kind;
 
     template<typename... GlobalParameters>
-    measurement_plane(Mille* mille_ptr, bool verbose, GlobalParameters&... param)
+    measurement_plane(Mille* mille_ptr, GlobalParameters&... param)
         : mille(mille_ptr)
-        , verbose_flag(verbose)
         , residual_model(param.value...)
         , globals_kind({param.make_parameter_kind()...})
     {
@@ -227,25 +226,6 @@ struct measurement_plane
     {
         locals_kind = kinds;
         return *this;
-    }
-
-    auto print() const -> void
-    {
-        constexpr auto width = 14;
-        const auto bar = std::string(width * 7, '=');
-
-        residual_model.print();
-
-        std::cout << bar << '\n' << " GLOBAL:";
-        for (const auto id : globals_kind) {
-            std::cout << std::setw(5) << id.get().id << id.get_kind();
-        }
-
-        std::cout << "  | LOCAL:";
-        for (const auto kind : locals_kind) {
-            std::cout << std::setw(5) << kind;
-        }
-        std::cout << '\n' << bar << '\n';
     }
 
     /**
@@ -313,6 +293,27 @@ struct measurement_plane
         return *this;
     }
 
+    auto print() const -> void
+    {
+        constexpr auto width = 14;
+        const auto bar = std::string(width * 7, '=');
+
+        residual_model.print();
+
+        std::cout << bar << '\n' << " GLOBAL:";
+        for (const auto id : globals_kind) {
+            std::cout << std::setw(5) << id.get().id << id.get_kind();
+        }
+
+        std::cout << "  | LOCAL:";
+        for (const auto kind : locals_kind) {
+            std::cout << std::setw(5) << kind;
+        }
+        std::cout << '\n' << bar << '\n';
+    }
+
+    auto set_verbose(int make_verbose) -> void { verbose_flag = make_verbose; }
+
   private:
     template<typename Param, typename... StateKind, std::size_t... Is>
     auto set_params_configuration(Param& p, std::index_sequence<Is...> const&, StateKind... kinds) -> measurement_plane<T, ResidualModel>&
@@ -335,9 +336,8 @@ struct model_planes
     using measurement_plane_t = measurement_plane<T, ResidualModel>;
     using measurement_plane_array_t = std::vector<measurement_plane_t>;
 
-    model_planes(promille<T>* promille_ptr, bool verbose)
+    model_planes(promille<T>* promille_ptr)
         : pro_mille(promille_ptr)
-        , verbose_flag(verbose)
     {
     }
 
@@ -353,8 +353,8 @@ struct model_planes
     {
         static_assert(ResidualModel::n_globals == sizeof...(globals_ids), "Wrong number of local parameters in model");
 
-        auto new_plane = plane_indexes_map.emplace(
-            plane_id, measurement_plane_t(&pro_mille->get_mille(), verbose_flag, pro_mille->global_parameter(globals_ids)...));
+        auto new_plane =
+            plane_indexes_map.emplace(plane_id, measurement_plane_t(&pro_mille->get_mille(), pro_mille->global_parameter(globals_ids)...));
 
         if (!new_plane.second)
             throw;
@@ -390,6 +390,8 @@ struct model_planes
         }
         std::cout << bar << '\n';
     }
+
+    auto set_verbose(int make_verbose) -> void { verbose_flag = make_verbose; }
 
   private:
     std::map<size_t, measurement_plane_t> plane_indexes_map;
@@ -451,7 +453,7 @@ class promille
     template<typename ResidualModel>
     auto make_model_planes() -> model_planes<T, ResidualModel>
     {
-        return model_planes<T, ResidualModel>(this, verbose);
+        return model_planes<T, ResidualModel>(this);
     }
 
     /** Call Mille::end()
