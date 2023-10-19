@@ -312,7 +312,11 @@ struct measurement_plane
         std::cout << '\n' << bar << '\n';
     }
 
-    auto set_verbose(int make_verbose) -> void { verbose_flag = make_verbose; }
+    auto set_verbose(int make_verbose) -> measurement_plane<T, ResidualModel>&
+    {
+        verbose_flag = make_verbose;
+        return *this;
+    }
 
   private:
     template<typename Param, typename... StateKind, std::size_t... Is>
@@ -391,7 +395,11 @@ struct model_planes
         std::cout << bar << '\n';
     }
 
-    auto set_verbose(int make_verbose) -> void { verbose_flag = make_verbose; }
+    auto set_verbose(int make_verbose) -> model_planes<T, ResidualModel>&
+    {
+        verbose_flag = make_verbose;
+        return *this;
+    }
 
   private:
     std::map<size_t, measurement_plane_t> plane_indexes_map;
