@@ -132,7 +132,9 @@ auto main(int argc, char* argv[]) -> int
         straw_planes1.print();
     }
 
-    straw_planes1.plane(1).add_measurement(0);
+    auto meas = straw_planes1.plane(1).add_measurement(0);
+
+    meas.model().print();
 
     return 0;
 }

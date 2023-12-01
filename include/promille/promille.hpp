@@ -24,6 +24,8 @@ struct residual_model_base
     static const size_t n_globals = Nglobals;
     static const size_t n_locals = Nlocals;
 
+    virtual ~residual_model_base() = default;
+
     virtual auto residual() const -> T = 0;
 
     constexpr auto global_derivative(size_t variable_number) const -> T
@@ -38,21 +40,24 @@ struct residual_model_base
         return local_derivatives.at(variable_number);
     }
 
-    virtual auto print() const -> void
+    virtual auto write(std::ostream& out) const -> std::ostream&
     {
-        std::cout << "MODEL: Ng = " << n_globals << "  Nl = " << n_locals << '\n';
-        std::cout << "drd_globals: ";
+        out << "-MODEL Ng= " << n_globals << "  Nl= " << n_locals << '\n';
+        out << " drd_globals: ";
         for (size_t i = 0; i < n_globals; ++i) {
-            std::cout << std::setw(12) << global_derivative(i);
+            out << std::setw(12) << global_derivative(i);
         }
-        std::cout << "\ndrd_locals : ";
+        out << "\n drd_locals:  ";
         for (size_t i = 0; i < n_locals; ++i) {
-            std::cout << std::setw(12) << local_derivative(i);
+            out << std::setw(12) << local_derivative(i);
         }
-        std::cout << '\n';
+        out << '\n';
+        return out;
     }
 
-    virtual ~residual_model_base() = default;
+    friend std::ostream& operator<<(std::ostream& os, const residual_model_base& rmb) { return rmb.write(os); }
+
+    auto print() const -> void { std::cout << *this; }
 
   protected:
     template<size_t variable_number>
@@ -269,7 +274,6 @@ struct measurement_plane
         }
 
         if (verbose_flag) {
-            residual_model.print();
             static const size_t value_width = 12;
             std::cout << "   res=" << std::setw(value_width) << residuum << "   sigma=" << std::setw(value_width) << sigma
                       << "   NLC=" << local_cnt << std::right;

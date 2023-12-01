@@ -11,7 +11,7 @@ on:
 
 jobs:
   lint:
-    runs-on: rlalik/root:latest
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
@@ -32,7 +32,7 @@ jobs:
   coverage:
     needs: [lint]
 
-    runs-on: rlalik/root:latest
+    runs-on: ubuntu-latest
 
     # To enable coverage, delete the last line from the conditional below and
     # edit the "<name>" placeholder to your GitHub name.
@@ -47,6 +47,15 @@ jobs:
     - name: Install LCov
       run: sudo apt-get update -q
         && sudo apt-get install lcov -q -y
+
+    - name: Install ROOT
+      id: root
+      uses: rlalik/provide-cern-root@v2
+
+    - run: |
+        . ${{ steps.root.outputs.rootsys }}/bin/thisroot.sh
+        sudo apt install nlohmann-json3-dev
+      shell: bash
 
     - name: Configure
       run: cmake --preset=ci-coverage
@@ -69,12 +78,21 @@ jobs:
   sanitize:
     needs: [lint]
 
-    runs-on: rlalik/root:latest
+    runs-on: ubuntu-latest
 
     env: { CXX: clang++-14 }
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Install ROOT
+      id: root
+      uses: rlalik/provide-cern-root@v2
+
+    - run: |
+        . ${{ steps.root.outputs.rootsys }}/bin/thisroot.sh
+        sudo apt install nlohmann-json3-dev
+      shell: bash
 
     - name: Configure
       run: cmake --preset=ci-sanitize
@@ -120,6 +138,15 @@ jobs:
         Add-Content "$env:GITHUB_ENV" 'UseMultiToolTask=true'
         Add-Content "$env:GITHUB_ENV" 'EnforceProcessCountAcrossBuilds=true'
 
+    - name: Install ROOT
+      id: root
+      uses: rlalik/provide-cern-root@v2
+
+    - run: |
+        . ${{ steps.root.outputs.rootsys }}/bin/thisroot.sh
+        sudo apt install nlohmann-json3-dev
+      shell: bash
+
     - name: Configure
       shell: pwsh
       run: cmake "--preset=ci-$("${{ matrix.os }}".split("-")[0])"
@@ -138,7 +165,7 @@ jobs:
     # Deploy docs only when builds succeed
     needs: [sanitize, test]
 
-    runs-on: rlalik/root:latest
+    runs-on: ubuntu-latest
 
     # To enable, first you have to create an orphaned gh-pages branch:
     #
