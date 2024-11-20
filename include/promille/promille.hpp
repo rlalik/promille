@@ -187,8 +187,9 @@ auto operator<<(std::ostream& ofs, const promille::parameter_kind<_T>& rhs) -> s
 template<typename T, typename ResidualModel>
 struct measurement_plane
 {
+    bool verbose_flag {false};
+    Mille* mille {nullptr};
     ResidualModel residual_model;
-
     std::array<parameter_kind<T>, ResidualModel::n_globals> globals_kind;
     std::array<Kind, ResidualModel::n_locals> locals_kind;
 
@@ -329,9 +330,6 @@ struct measurement_plane
         ((p[Is].set_kind(kinds)), ...);
         return *this;
     }
-
-    bool verbose_flag {false};
-    Mille* mille {nullptr};
 };
 
 template<typename T>
@@ -428,7 +426,7 @@ class mille
      */
     mille(const char* prefix, const char* outFileName, bool asBianry = true, bool writeZero = true)
         : mille_prefix(prefix)
-        , up_mille(Mille(outFileName, asBianry, writeZero))
+        , up_mille(outFileName, asBianry, writeZero)
     {
     }
 
