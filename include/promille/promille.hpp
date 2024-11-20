@@ -335,7 +335,7 @@ struct measurement_plane
 };
 
 template<typename T>
-class promille;
+class mille;
 
 template<typename T, typename ResidualModel>
 struct model_planes
@@ -344,7 +344,7 @@ struct model_planes
     using measurement_plane_t = measurement_plane<T, ResidualModel>;
     using measurement_plane_array_t = std::vector<measurement_plane_t>;
 
-    model_planes(promille<T>* promille_ptr)
+    model_planes(mille<T>* promille_ptr)
         : pro_mille(promille_ptr)
     {
     }
@@ -408,12 +408,12 @@ struct model_planes
   private:
     std::map<size_t, measurement_plane_t> plane_indexes_map;
 
-    promille<T>* pro_mille {nullptr};
+    mille<T>* pro_mille {nullptr};
     bool verbose_flag {false};
 };
 
 template<typename T = float>
-class promille
+class mille
 {
   public:
     using global_param_type_t = ::promille::global_parameter<T>;
@@ -426,9 +426,9 @@ class promille
      * @param asBianry the output file format, see MillePede documentation
      * @param writeZero see MillePede documentation
      */
-    promille(const char* prefix, const char* outFileName, bool asBianry = true, bool writeZero = true)
+    mille(const char* prefix, const char* outFileName, bool asBianry = true, bool writeZero = true)
         : mille_prefix(prefix)
-        , mille(Mille(outFileName, asBianry, writeZero))
+        , up_mille(Mille(outFileName, asBianry, writeZero))
     {
     }
 
@@ -459,7 +459,7 @@ class promille
 
     auto global_parameter(size_t parameter_id) -> global_param_type_t&
     {
-        return (const_cast<global_param_type_t&>(const_cast<const promille*>(this)->global_parameter(parameter_id)));
+        return (const_cast<global_param_type_t&>(const_cast<const mille*>(this)->global_parameter(parameter_id)));
     }
 
     template<typename ResidualModel>
@@ -475,7 +475,7 @@ class promille
         if (verbose) {
             std::cout << "--------------------\n";
         }
-        mille.end();
+        up_mille.end();
     }
 
     /** Call Mille::kill();
@@ -485,7 +485,7 @@ class promille
         if (verbose) {
             std::cout << " KILL  KILL  KILL  KILL\n";
         }
-        mille.kill();
+        up_mille.kill();
     }
 
     auto write_param_file() -> void
@@ -517,7 +517,7 @@ class promille
         std::cout << bar << '\n';
     }
 
-    auto get_mille() -> Mille& { return mille; }
+    auto get_mille() -> Mille& { return up_mille; }
 
     auto set_verbose(int make_verbose) -> void { verbose = make_verbose; }
 
@@ -528,7 +528,7 @@ class promille
 
     std::map<size_t, size_t> plane_indexes_map;
 
-    Mille mille;
+    Mille up_mille;
     int verbose {0};
 };
 

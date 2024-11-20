@@ -8,7 +8,7 @@ using ROOT::Math::XYZVector;
 
 TEST(Mille, SingleModel)
 {
-    promille::promille mille("test_", "test.bin");
+    promille::mille mille("test_", "test.bin");
 
     mille.add_global_parameter(1, -10, "P1");
     mille.add_global_parameter(2, -20, "P2");
@@ -27,7 +27,7 @@ TEST(Mille, SingleModel)
 
 TEST(Mille, DoubleModel)
 {
-    promille::promille mille("test_", "test.bin");
+    promille::mille mille("test_", "test.bin");
 
     mille.set_verbose(2);
 
