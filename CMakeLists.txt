@@ -18,11 +18,15 @@ FetchContent_Declare(MillePede2
 FetchContent_GetProperties(MillePede2)
 
 if(NOT millepede2_POPULATED)
-  FetchContent_Populate(MillePede2)
+  if(CMAKE_VERSION VERSION_LESS 3.14.0)
+    FetchContent_Populate(MillePede2)
+    add_subdirectory(${millepede2_SOURCE_DIR} ${millepede2_BINARY_DIR})
+  else()
+    FetchContent_MakeAvailable(MillePede2)
+  endif()
 
   file(COPY ${PROJECT_SOURCE_DIR}/extras/millepede2/CMakeLists.txt DESTINATION ${millepede2_SOURCE_DIR})
 
-  add_subdirectory(${millepede2_SOURCE_DIR} ${millepede2_BINARY_DIR})
 endif()
 
 include(cmake/project-is-top-level.cmake)
