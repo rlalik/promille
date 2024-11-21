@@ -77,8 +77,8 @@ struct residual_model_base
     residual_model_base() = default;
 
   private:
-    std::array<T, Nglobals> global_derivatives;
-    std::array<T, Nlocals> local_derivatives;
+    std::array<T, Nglobals> global_derivatives = {};
+    std::array<T, Nlocals> local_derivatives = {};
 };
 
 enum class Kind
@@ -190,8 +190,8 @@ struct measurement_plane
     bool verbose_flag {false};
     Mille* mille {nullptr};
     ResidualModel residual_model;
-    std::array<parameter_kind<T>, ResidualModel::n_globals> globals_kind;
-    std::array<Kind, ResidualModel::n_locals> locals_kind;
+    std::array<parameter_kind<T>, ResidualModel::n_globals> globals_kind {};
+    std::array<Kind, ResidualModel::n_locals> locals_kind {};
 
     template<typename... GlobalParameters>
     measurement_plane(Mille* mille_ptr, GlobalParameters&... param)
@@ -239,7 +239,7 @@ struct measurement_plane
      *
      */
     template<typename... ModelExtraArguments>
-    auto add_measurement(float sigma, ModelExtraArguments... extra_args) -> measurement_plane<T, ResidualModel>&
+    auto add_measurement(T sigma, ModelExtraArguments... extra_args) -> measurement_plane<T, ResidualModel>&
     {
         if constexpr (sizeof...(extra_args)) {
             residual_model.recalculate(extra_args...);
@@ -247,7 +247,7 @@ struct measurement_plane
 
         auto residuum = residual_model.residual();
 
-        std::vector<float> global_derivatives(residual_model.n_globals);
+        std::vector<T> global_derivatives(residual_model.n_globals);
         std::vector<int> global_deriv_index(residual_model.n_globals);
 
         int global_cnt = 0;
@@ -262,7 +262,7 @@ struct measurement_plane
             }
         }
 
-        std::vector<float> local_derivatives(residual_model.n_locals);
+        std::vector<T> local_derivatives(residual_model.n_locals);
         int local_cnt = 0;
 
         for (int i = 0; i < residual_model.n_locals; ++i) {
@@ -292,7 +292,7 @@ struct measurement_plane
                      global_cnt,
                      global_derivatives.data(),
                      global_deriv_index.data(),
-                     static_cast<float>(residuum),
+                     static_cast<T>(residuum),
                      sigma);
 
         return *this;
@@ -436,7 +436,7 @@ class mille
      * @param description the description
      * @return the added id
      */
-    auto add_global_parameter(size_t parameter_id, float value, std::string description = "") -> size_t
+    auto add_global_parameter(size_t parameter_id, T value, std::string description = "") -> size_t
     {
         if (global_parameters_map.find(parameter_id) != global_parameters_map.end()) {
             abort();
