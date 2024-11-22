@@ -8,8 +8,9 @@ project(
   HOMEPAGE_URL "https://www.desy.de/~kleinwrt/MP2/doc/html/index.html"
   LANGUAGES C CXX Fortran)
 
-option(MP2_INSTALL "Install MP2 files if used as subproject" OFF)
-option(MP2_EXTRA_TOOLS "Install extra MP2 tools" OFF)
+option(MP2_INSTALL_MILLE "Install MP2 Mille files if used as subproject" OFF)
+option(MP2_INSTALL_PEDE "Install MP2 pede files if used as subproject" OFF)
+option(MP2_INSTALL_EXTRA_TOOLS "Install extra MP2 tools" OFF)
 
 include(GNUInstallDirs)
 
@@ -76,11 +77,10 @@ write_basic_package_version_file(MillePede2ConfigVersion.cmake
 string(COMPARE EQUAL "${CMAKE_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}"
                PROJECT_IS_TOP_LEVEL)
 
-if(PROJECT_IS_TOP_LEVEL OR MP2_INSTALL)
+if(PROJECT_IS_TOP_LEVEL OR MP2_INSTALL_MILLE)
   install(
-    TARGETS pede Mille
+    TARGETS Mille
     EXPORT MillePede2_Targets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
             COMPONENT Libraries
             NAMELINK_COMPONENT Development
@@ -96,11 +96,17 @@ if(PROJECT_IS_TOP_LEVEL OR MP2_INSTALL)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/MillePede2Config.cmake
                 ${CMAKE_CURRENT_BINARY_DIR}/MillePede2ConfigVersion.cmake
           DESTINATION ${MillePede2_INSTALL_CMAKEDIR})
+endif()
 
-  if(MP2_EXTRA_TOOLS)
-    install(PROGRAMS ${PROJECT_SOURCE_DIR}/tools/readMilleBinary.py
-                     ${PROJECT_SOURCE_DIR}/tools/compareResults.py TYPE BIN)
-    install(FILES ${PROJECT_SOURCE_DIR}/tools/readPedeHists.C
-            DESTINATION ${CMAKE_INSTALL_DATADIR}/millepede2)
-  endif()
+if(PROJECT_IS_TOP_LEVEL OR MP2_INSTALL_PEDE)
+  install(
+    TARGETS pede
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
+
+if(MP2_INSTALL_EXTRA_TOOLS)
+  install(PROGRAMS ${PROJECT_SOURCE_DIR}/tools/readMilleBinary.py
+                   ${PROJECT_SOURCE_DIR}/tools/compareResults.py TYPE BIN)
+  install(FILES ${PROJECT_SOURCE_DIR}/tools/readPedeHists.C
+          DESTINATION ${CMAKE_INSTALL_DATADIR}/millepede2)
 endif()
